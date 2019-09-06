@@ -3,8 +3,11 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
+	node: {
+    fs: 'empty'
+	},
 	mode: 'development',
-	entry: './src/index.js',
+	entry: './src/main.js',
 	devtool: 'inline-source-map',
 	devServer: {
 		contentBase: './dist'
@@ -12,7 +15,7 @@ module.exports = {
 	plugins: [
 		new CleanWebpackPlugin(),
 		new HtmlWebpackPlugin({
-			title: 'threejs project'
+			title: 'Differential Growth'
 		})
 	],
   output: {
@@ -40,6 +43,12 @@ module.exports = {
 				test: /\.(png|svg|jpg|gif)$/,
 				use: [
 					'file-loader'
+				]
+			},
+			{
+				test: /\.obj$/,
+				use: [
+					'raw-loader'
 				]
 			}
 		]
