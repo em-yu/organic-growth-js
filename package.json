@@ -1,5 +1,5 @@
 {
-  "name": "diff-growth",
+  "name": "organic-growth-js",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,7 +7,7 @@
     "start": "webpack-dev-server --open",
     "build": "webpack"
   },
-  "author": "",
+  "author": "yu-emilie",
   "license": "ISC",
   "devDependencies": {
     "clean-webpack-plugin": "^3.0.0",

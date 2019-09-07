@@ -15,7 +15,7 @@ module.exports = {
 	plugins: [
 		new CleanWebpackPlugin(),
 		new HtmlWebpackPlugin({
-			title: 'Differential Growth'
+			title: 'Organic Growth'
 		})
 	],
   output: {
