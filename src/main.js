@@ -1,20 +1,15 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import { Geometry } from '../geometry-processing-js/node/core/geometry';
-import MeshIO from '../geometry-processing-js/node/utils/meshio';
-import { Mesh } from '../geometry-processing-js/node/core/mesh';
-// const Mesh = MeshModule[0]; // Mesh class
-// const Geometry = GeometryModule[0]; // Geometry class
+import Mesh from './mesh/Mesh';
 
-import smallDisk from '../geometry-processing-js/input/small_disk.obj';
+import smallDisk from './obj/small_disk.obj';
 
 import './style.css';
 
-const BEIGE = new Vector(1.0, 0.9, 0.9);
-const ORANGE = new Vector(1.0, 0.5, 0.0);
-const GREEN = new Vector(0.0, 1.0, 0.3);
+const BEIGE = new THREE.Vector3(1.0, 0.9, 0.9);
+const ORANGE = new THREE.Vector3(1.0, 0.5, 0.0);
+const GREEN = new THREE.Vector3(0.0, 1.0, 0.3);
 
 // Init THREE.js scene
 const canvas = document.createElement('canvas');
@@ -36,81 +31,38 @@ camera.position.z = eyeZ;
 var controls = new OrbitControls( camera, renderer.domElement );
 controls.update();
 
-
-// Build mesh from polygon soup
-let polygonSoup = MeshIO.readOBJ(smallDisk);
+// Build mesh
 let mesh = new Mesh();
-mesh.build(polygonSoup);
-
-// Create geometry object
-let geometry = new Geometry(mesh, polygonSoup["v"]);
-
-// Add colors
-let colors = new Array(mesh.vertices.length);
-colors.fill(BEIGE);
-
-// Grow edge vertices
-let boundaryFace = mesh.boundaries[0];
-
-for (let v of boundaryFace.adjacentVertices()) {
-  colors[v.index] = ORANGE;
-  // Find an inner edge
-  let innerEdge;
-  for (let e of v.adjacentEdges()) {
-    innerEdge = e.halfedge;
-    if (!innerEdge.onBoundary && !innerEdge.twin.onBoundary)
-      break;
-  }
-  let innerVertex = innerEdge.vertex;
-  if (innerVertex.index == v.index) {
-    innerVertex = innerEdge.twin.vertex;
-  };
-  colors[innerVertex.index] = GREEN;
-
-  // Translate edge vertex along inner edge
-  let vPos = geometry.positions[v.index];
-  let iPos = geometry.positions[innerVertex.index];
-  let dir = vPos.minus(iPos);
-  dir.normalize();
-  dir.scaleBy(0.1);
-  geometry.positions[v.index] = vPos.plus(dir);
-}
+mesh.buildFromOBJ(smallDisk);
 
 // Create THREE.js geometry object
 let threeGeometry = new THREE.BufferGeometry();
 
-// Fill position and color buffers
-let V = mesh.vertices.length;
-let threePositions = new Float32Array(V * 3);
-let threeColors = new Float32Array(V * 3);
-for (let v of mesh.vertices) {
-	let i = v.index;
-
-	let position = geometry.positions[i];
-	threePositions[3 * i + 0] = position.x;
-	threePositions[3 * i + 1] = position.y;
-  threePositions[3 * i + 2] = position.z;
-  
-  let color = colors[i];
-  threeColors[3 * i + 0] = color.x;
-  threeColors[3 * i + 1] = color.y;
-  threeColors[3 * i + 2] = color.z;
-};
-
+console.log(mesh);
 // Fill index buffer
-let F = mesh.faces.length;
-let indices = new Uint32Array(F * 3);
+let threeIndices = [];
 for (let f of mesh.faces) {
-	let i = 0;
-	for (let v of f.adjacentVertices()) {
-		indices[3 * f.index + i++] = v.index;
-	}
-};
+  threeIndices.push(...f.getVerticesInd());
+}
+
+// Fill positions and colors buffers
+let threePositions = [];
+let threeColors = [];
+
+for (let v of mesh.vertices) {
+  threePositions.push(v.position.x);
+  threePositions.push(v.position.y);
+  threePositions.push(v.position.z);
+
+  threeColors.push(ORANGE.x);
+  threeColors.push(ORANGE.y);
+  threeColors.push(ORANGE.z);
+}
 
 // Set geometry
-threeGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
-threeGeometry.addAttribute("position", new THREE.BufferAttribute(threePositions, 3));
-threeGeometry.addAttribute("color", new THREE.BufferAttribute(threeColors, 3));
+threeGeometry.setIndex(threeIndices);
+threeGeometry.addAttribute("position", new THREE.Float32BufferAttribute( threePositions, 3 ));
+threeGeometry.addAttribute("color", new THREE.Float32BufferAttribute( threeColors, 3 ));
 
 // Create material
 let threeMaterial = new THREE.MeshBasicMaterial(
