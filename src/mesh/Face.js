@@ -1,6 +1,9 @@
 /**
  * @typedef {import('./Vertex')} Vertex
+ * @typedef {import('three').Vector3} Vector3
  */
+
+import { Vector3 } from 'three';
 
 class Face {
 	constructor() {
@@ -8,6 +11,12 @@ class Face {
 		this.edges = [];
 		/** @type {Vertex[]} */
 		this.vertices = undefined;
+		/** @type {Vector3} */
+		this.normal = undefined;
+		/** @type {number[]} */
+		this.cosines = undefined;
+		/** @type {Vector3[]} */
+		this.altitudes = undefined;
 	}
 
 	setVertices(verticesList) {
@@ -31,24 +40,6 @@ class Face {
 		return this.vertices.map(v => v.index);
 	}
 
-	// getVerticesInd() {
-	// 	let vertices = new Map();
-	// 	for (let i = 0; i < 3 ; i++) {
-	// 		const edge = this.edges[i];
-	// 		for (let j = 0; j < 2; j++) {
-	// 			const vertex = edge.vertices[j];
-	// 			if (!vertices.has(vertex.index)) {
-	// 				vertices.set(vertex.index, vertex.index);
-	// 			}
-	// 		}
-	// 	}
-	// 	if (this.reversed) {
-	// 		console.log("reversed");
-	// 		console.log(vertices.values());
-	// 		console.log(Array.from(vertices.values()).reverse());
-	// 	}
-	// 	return this.reversed? Array.from(vertices.values()).reverse() : Array.from(vertices.values());
-	// }
 }
 
 export default Face;

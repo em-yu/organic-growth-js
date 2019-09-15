@@ -74,12 +74,16 @@ class Mesh {
 					face.reversed = true;
 				}
 				else {
-					// const vi = vertices[i];
-					// const vj = vertices[j];
+					// let edgeVec = new Vector3()
+					// edgeVec.subVectors(vertices[j].position, vertices[i].position);
+					// let edgeLength = edgeVec.length();
+					// edgeVec.divideScalar(edgeLength);
+					const vi = vertices[i];
+					const vj = vertices[j];
 
 					// Create edge
 					let edge = new Edge();
-					// edge.setVertices(vi, vj);
+					edge.setVertices(vi, vj);
 					edge.setFace(face);
 					this.edges.push(edge);
 
