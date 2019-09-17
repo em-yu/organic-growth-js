@@ -19,16 +19,20 @@ const BEIGE = new Vector(1.0, 0.9, 0.9);
 const ORANGE = new Vector(1.0, 0.5, 0.0);
 const GREEN = new Vector(0.0, 1.0, 0.3);
 
+const MAX_POINTS = 1000;
+
 // GUI
 let sceneState = function() {
   this.growStep = function() { grow() };
   this.growScale = 0.05;
+  this.split = function() { splitEdges() };
 };
 
 let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'growStep' );
 gui.add( params, 'growScale' );
+gui.add( params, 'split' );
 
 // Init THREE.js scene
 const canvas = document.createElement('canvas');
@@ -55,9 +59,10 @@ controls.update();
 let polygonSoup = MeshIO.readOBJ(smallDisk);
 let mesh = new Mesh();
 mesh.build(polygonSoup);
+console.log(mesh);
 
 // Create geometry object
-let geometry = new Geometry(mesh, polygonSoup["v"]);
+let geometry = new Geometry(mesh, polygonSoup["v"], MAX_POINTS);
 
 // Add colors
 let colors = new Array(mesh.vertices.length);
@@ -67,9 +72,9 @@ colors.fill(BEIGE);
 let threeGeometry = new THREE.BufferGeometry();
 
 // Fill position and color buffers
-let V = mesh.vertices.length;
-let threePositions = new Float32Array(V * 3);
-let threeColors = new Float32Array(V * 3);
+// let V = mesh.vertices.length;
+let threePositions = new Float32Array(MAX_POINTS * 3);
+// let threeColors = new Float32Array(MAX_POINTS * 3);
 for (let v of mesh.vertices) {
 	let i = v.index;
 
@@ -78,31 +83,36 @@ for (let v of mesh.vertices) {
 	threePositions[3 * i + 1] = position.y;
   threePositions[3 * i + 2] = position.z;
   
-  let color = colors[i];
-  threeColors[3 * i + 0] = color.x;
-  threeColors[3 * i + 1] = color.y;
-  threeColors[3 * i + 2] = color.z;
+  // let color = colors[i];
+  // threeColors[3 * i + 0] = color.x;
+  // threeColors[3 * i + 1] = color.y;
+  // threeColors[3 * i + 2] = color.z;
 };
 
-// Fill index buffer
-let F = mesh.faces.length;
-let indices = new Uint32Array(F * 3);
-for (let f of mesh.faces) {
-	let i = 0;
-	for (let v of f.adjacentVertices()) {
-		indices[3 * f.index + i++] = v.index;
-	}
+// Fill index buffer, TODO: store indices in geometry
+// let F = mesh.faces.length;
+let indices = new Uint32Array(MAX_POINTS * 3);
+// let nIndices = 0;
+// for (let f of mesh.faces) {
+// 	let i = 0;
+// 	for (let v of f.adjacentVertices()) {
+//     indices[3 * f.index + i++] = v.index;
+//     nIndices++;
+// 	}
+// };
+
+for (let i = 0; i < geometry.indices.length; i++) {
+  indices[i] = geometry.indices[i];
 };
 
 // Set geometry
 threeGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
 threeGeometry.addAttribute("position", new THREE.BufferAttribute(threePositions, 3));
-threeGeometry.addAttribute("color", new THREE.BufferAttribute(threeColors, 3));
+// threeGeometry.addAttribute("color", new THREE.BufferAttribute(threeColors, 3));
 
 // Create material
 let threeMaterial = new THREE.MeshBasicMaterial(
-  { 
-    vertexColors: THREE.VertexColors,
+  {
     wireframe: true,
   }
 );
@@ -133,31 +143,35 @@ function computeGeodesics() {
 
   // Grow edge vertices
   let boundaryFace = mesh.boundaries[0];
-
+  // Add heat sources at boundary vertices
   for (let v of boundaryFace.adjacentVertices()) {
-    colors[v.index] = ORANGE;
-    // Find an inner edge
-    let innerEdge;
-    for (let e of v.adjacentEdges()) {
-      innerEdge = e.halfedge;
-      if (!innerEdge.onBoundary && !innerEdge.twin.onBoundary)
-        break;
-    }
-    let innerVertex = innerEdge.vertex;
-    if (innerVertex.index == v.index) {
-      innerVertex = innerEdge.twin.vertex;
-    };
-    colors[innerVertex.index] = GREEN;
-
     delta.set(1, v.index, 0);
   }
-
   let heatMethod = new HeatMethod(geometry);
 
   return heatMethod.compute(delta);
 }
 
+function minimizeBend() {
+  // Compute 
+}
+
+function splitEdges() {
+  // split edge 0
+  let edge = mesh.edges[5];
+  geometry.split(edge);
+  for (let i = 0; i < geometry.indices.length; i++) {
+    indices[i] = geometry.indices[i];
+  };
+
+  updateGeometry();
+}
+
 function grow() {
+
+  // Store positions before growth
+  const initialState = Object.assign({}, geometry.positions);
+
   let phi = computeGeodesics();
   let maxPhi = 0;
   for (let i = 0; i < phi.nRows(); i++) {
@@ -169,13 +183,18 @@ function grow() {
     let vB = e.halfedge.twin.vertex;
     let phiA = phi.get(vA.index, 0);
     let phiB = phi.get(vB.index, 0);
+    // console.log(vA, vB);
+    // console.log(phiA, phiB);
 
-    // Grow towards slower phi
+    // Grow along edge towards slower phi
     if (phiA < phiB) {
       [vA, vB] = [vB, vA];
     }
-
     let growthDir = geometry.positions[vB.index].minus(geometry.positions[vA.index]);
+
+    // Grow towards the up direction
+    let up = new Vector(0, 0, Math.random());
+    growthDir = growthDir.plus(up);
     growthDir.normalize();
 
     // Scale growth depending on geodesic distance
@@ -184,6 +203,7 @@ function grow() {
     geometry.positions[vB.index] = geometry.positions[vB.index].plus(growthDir);
   }
 
+  minimizeBend(initialState);
   updateGeometry();
 }
 
@@ -192,10 +212,11 @@ function updateGeometry() {
     let i = v.index;
     let position = geometry.positions[i];
     threeGeometry.attributes.position.setXYZ( i, position.x, position.y, position.z );
-    
   };
 
+  threeGeometry.index.set(indices);
   threeGeometry.attributes.position.needsUpdate = true;
+  threeGeometry.index.needsUpdate = true;
   threeGeometry.computeBoundingSphere();
 }
 
