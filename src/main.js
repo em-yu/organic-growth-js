@@ -89,17 +89,8 @@ for (let v of mesh.vertices) {
   // threeColors[3 * i + 2] = color.z;
 };
 
-// Fill index buffer, TODO: store indices in geometry
-// let F = mesh.faces.length;
 let indices = new Uint32Array(MAX_POINTS * 3);
-// let nIndices = 0;
-// for (let f of mesh.faces) {
-// 	let i = 0;
-// 	for (let v of f.adjacentVertices()) {
-//     indices[3 * f.index + i++] = v.index;
-//     nIndices++;
-// 	}
-// };
+
 
 for (let i = 0; i < geometry.indices.length; i++) {
   indices[i] = geometry.indices[i];
@@ -120,16 +111,6 @@ let threeMaterial = new THREE.MeshBasicMaterial(
 // Create THREEjs mesh
 let threeMesh = new THREE.Mesh(threeGeometry, threeMaterial);
 scene.add(threeMesh);
-
-// // Create wireframe
-// let wireframe = new THREE.WireframeGeometry( threeGeometry );
-
-// let line = new THREE.LineSegments( wireframe );
-// line.material.color = new THREE.Color("#ff0000");
-// line.material.depthTest = false;
-// line.material.opacity = 0.5;
-// line.material.transparent = true;
-// scene.add(line);
 
 
 // Render scene
@@ -167,6 +148,18 @@ function splitEdges() {
   updateGeometry();
 }
 
+function balanceMesh() {
+  for (let e of mesh.edges) {
+    const length = geometry.length(e);
+    if (length > 1.0) {
+      geometry.split(e);
+
+      // console.log("split edge index " + e.index)
+    }
+  }
+
+}
+
 function grow() {
 
   // Store positions before growth
@@ -179,14 +172,17 @@ function grow() {
   }
 
   for (let e of mesh.edges) {
+    if (e.onBoundary())
+      continue;
     let vA = e.halfedge.vertex;
     let vB = e.halfedge.twin.vertex;
     let phiA = phi.get(vA.index, 0);
     let phiB = phi.get(vB.index, 0);
+    // console.log(e.index);
     // console.log(vA, vB);
     // console.log(phiA, phiB);
 
-    // Grow along edge towards slower phi
+    // Grow along edge towards smaller phi
     if (phiA < phiB) {
       [vA, vB] = [vB, vA];
     }
@@ -197,13 +193,26 @@ function grow() {
     growthDir = growthDir.plus(up);
     growthDir.normalize();
 
+    // Divide by number of non boundary edges incident on vertices
+    // TODO: Make this more efficient (remove loop)
+    let nE = 0;
+    for (let e of vB.adjacentEdges()) {
+      if (!e.onBoundary())
+        nE++;
+    }
+
+    let normalizingFactor = nE > 0 ? 1/nE : 1;
+
     // Scale growth depending on geodesic distance
     let geodesicScale = maxPhi - (phiA + phiB) / 2;
-    growthDir.scaleBy(geodesicScale * params.growScale);
+    growthDir.scaleBy(geodesicScale * params.growScale * normalizingFactor);
     geometry.positions[vB.index] = geometry.positions[vB.index].plus(growthDir);
   }
 
   minimizeBend(initialState);
+
+  balanceMesh();
+  
   updateGeometry();
 }
 
@@ -212,6 +221,10 @@ function updateGeometry() {
     let i = v.index;
     let position = geometry.positions[i];
     threeGeometry.attributes.position.setXYZ( i, position.x, position.y, position.z );
+  };
+  // This needs to be done only if there was edge splitting
+  for (let i = 0; i < geometry.indices.length; i++) {
+    indices[i] = geometry.indices[i];
   };
 
   threeGeometry.index.set(indices);
