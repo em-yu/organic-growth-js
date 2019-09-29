@@ -32,6 +32,7 @@ let sceneState = function() {
   this.kb = 10.0;
   this.timeStep = 0.001;
   this.nIter = 100;
+  this.wireframe = false;
 };
 
 let params = new sceneState();
@@ -43,6 +44,7 @@ gui.add( params, 'energyMin' );
 gui.add( params, 'kb' );
 gui.add( params, 'timeStep' );
 gui.add( params, 'nIter' );
+gui.add( params, 'wireframe' );
 
 // Init THREE.js scene
 const canvas = document.createElement('canvas');
@@ -84,6 +86,7 @@ let threeGeometry = new THREE.BufferGeometry();
 // Fill position and color buffers
 // let V = mesh.vertices.length;
 let threePositions = new Float32Array(MAX_POINTS * 3);
+let threeNormals = new Float32Array(MAX_POINTS * 3);
 // let threeColors = new Float32Array(MAX_POINTS * 3);
 for (let v of mesh.vertices) {
 	let i = v.index;
@@ -92,6 +95,12 @@ for (let v of mesh.vertices) {
 	threePositions[3 * i + 0] = position.x;
 	threePositions[3 * i + 1] = position.y;
   threePositions[3 * i + 2] = position.z;
+
+  // Angle weighted normals
+  let normal = geometry.vertexNormalAngleWeighted(v);
+	threeNormals[3 * i + 0] = normal.x;
+	threeNormals[3 * i + 1] = normal.y;
+  threeNormals[3 * i + 2] = normal.z;
   
   // let color = colors[i];
   // threeColors[3 * i + 0] = color.x;
@@ -108,7 +117,8 @@ for (let i = 0; i < geometry.indices.length; i++) {
 
 // Set geometry
 threeGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
-threeGeometry.addAttribute("position", new THREE.BufferAttribute(threePositions, 3));
+threeGeometry.addAttribute('position', new THREE.BufferAttribute(threePositions, 3));
+threeGeometry.addAttribute('normal', new THREE.BufferAttribute(threeNormals, 3));
 // threeGeometry.addAttribute("color", new THREE.BufferAttribute(threeColors, 3));
 
 // Create material
@@ -119,9 +129,21 @@ let threeMaterial = new THREE.MeshBasicMaterial(
   }
 );
 
+let normalMat = new THREE.MeshPhongMaterial( {
+  side: THREE.DoubleSide,
+  wireframe: params.wireframe,
+} );
+
 // Create THREEjs mesh
-let threeMesh = new THREE.Mesh(threeGeometry, threeMaterial);
+let threeMesh = new THREE.Mesh(threeGeometry, normalMat);
 scene.add(threeMesh);
+
+var pointLight = new THREE.PointLight( 0xff0000, 1, 100 );
+pointLight.position.set( 20, 20, 20 );
+scene.add( pointLight );
+
+var ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
+scene.add( ambientLight );
 
 
 // Render scene
@@ -159,7 +181,7 @@ function splitEdges() {
 function balanceMesh() {
   for (let e of mesh.edges) {
     const length = geometry.length(e);
-    if (length > 1.0) {
+    if (length > 0.5) {
       geometry.split(e);
 
       console.log("split edge index " + e.index)
@@ -225,6 +247,10 @@ function updateGeometry() {
     let i = v.index;
     let position = geometry.positions[i];
     threeGeometry.attributes.position.setXYZ( i, position.x, position.y, position.z );
+
+    // Angle weighted normals
+    let normal = geometry.vertexNormalAngleWeighted(v);
+    threeGeometry.attributes.normal.setXYZ(i, normal.x, normal.y, normal.z);
   };
   // This needs to be done only if there was edge splitting
   for (let i = 0; i < geometry.indices.length; i++) {
@@ -233,6 +259,7 @@ function updateGeometry() {
 
   threeGeometry.index.set(indices);
   threeGeometry.attributes.position.needsUpdate = true;
+  threeGeometry.attributes.normal.needsUpdate = true;
   threeGeometry.index.needsUpdate = true;
   threeGeometry.computeBoundingSphere();
 }
@@ -254,7 +281,10 @@ function render() {
     camera.updateProjectionMatrix();
 	}
 	
-	controls.update();
+  controls.update();
+  
+  // Set wireframe mode
+  threeMesh.material.wireframe = params.wireframe;
 
   renderer.render(scene, camera);
 
