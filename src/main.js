@@ -13,26 +13,36 @@ import HeatMethod from '../geometry-processing-js/node/projects/geodesic-distanc
 
 import smallDisk from '../geometry-processing-js/input/small_disk.obj';
 
+import DiscreteShells from './discrete-shells';
+
 import './style.css';
 
 const BEIGE = new Vector(1.0, 0.9, 0.9);
 const ORANGE = new Vector(1.0, 0.5, 0.0);
 const GREEN = new Vector(0.0, 1.0, 0.3);
 
-const MAX_POINTS = 1000;
+const MAX_POINTS = 10000;
 
 // GUI
 let sceneState = function() {
   this.growStep = function() { grow() };
   this.growScale = 0.05;
-  this.split = function() { splitEdges() };
+  // this.split = function() { splitEdges() };
+  this.energyMin = true;
+  this.kb = 10.0;
+  this.timeStep = 0.001;
+  this.nIter = 100;
 };
 
 let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'growStep' );
 gui.add( params, 'growScale' );
-gui.add( params, 'split' );
+// gui.add( params, 'split' );
+gui.add( params, 'energyMin' );
+gui.add( params, 'kb' );
+gui.add( params, 'timeStep' );
+gui.add( params, 'nIter' );
 
 // Init THREE.js scene
 const canvas = document.createElement('canvas');
@@ -105,6 +115,7 @@ threeGeometry.addAttribute("position", new THREE.BufferAttribute(threePositions,
 let threeMaterial = new THREE.MeshBasicMaterial(
   {
     wireframe: true,
+    side: THREE.DoubleSide,
   }
 );
 
@@ -133,13 +144,10 @@ function computeGeodesics() {
   return heatMethod.compute(delta);
 }
 
-function minimizeBend() {
-  // Compute 
-}
 
 function splitEdges() {
   // split edge 0
-  let edge = mesh.edges[5];
+  let edge = mesh.edges[36];
   geometry.split(edge);
   for (let i = 0; i < geometry.indices.length; i++) {
     indices[i] = geometry.indices[i];
@@ -154,7 +162,7 @@ function balanceMesh() {
     if (length > 1.0) {
       geometry.split(e);
 
-      // console.log("split edge index " + e.index)
+      console.log("split edge index " + e.index)
     }
   }
 
@@ -163,53 +171,49 @@ function balanceMesh() {
 function grow() {
 
   // Store positions before growth
-  const initialState = Object.assign({}, geometry.positions);
+  const positions0 = Object.assign({}, geometry.positions);
 
-  let phi = computeGeodesics();
+  let geodesicInfo = computeGeodesics();
+  let phi = geodesicInfo.distance;
+  let grad = geodesicInfo.gradient;
   let maxPhi = 0;
   for (let i = 0; i < phi.nRows(); i++) {
     maxPhi = Math.max(phi.get(i, 0), maxPhi);
   }
 
-  for (let e of mesh.edges) {
-    if (e.onBoundary())
-      continue;
-    let vA = e.halfedge.vertex;
-    let vB = e.halfedge.twin.vertex;
-    let phiA = phi.get(vA.index, 0);
-    let phiB = phi.get(vB.index, 0);
-    // console.log(e.index);
-    // console.log(vA, vB);
-    // console.log(phiA, phiB);
-
-    // Grow along edge towards smaller phi
-    if (phiA < phiB) {
-      [vA, vB] = [vB, vA];
+  for (let v of mesh.vertices) {
+    // Compute the gradient of distance field at the vertex
+    let gradV = new Vector();
+    let nF = 0;
+    for (let f of v.adjacentFaces()) {
+      gradV.incrementBy(grad[f.index]);
+      nF++;
     }
-    let growthDir = geometry.positions[vB.index].minus(geometry.positions[vA.index]);
-
+    let growthDir = gradV.over(-nF);
     // Grow towards the up direction
     let up = new Vector(0, 0, Math.random());
     growthDir = growthDir.plus(up);
     growthDir.normalize();
 
-    // Divide by number of non boundary edges incident on vertices
-    // TODO: Make this more efficient (remove loop)
-    let nE = 0;
-    for (let e of vB.adjacentEdges()) {
-      if (!e.onBoundary())
-        nE++;
-    }
-
-    let normalizingFactor = nE > 0 ? 1/nE : 1;
-
     // Scale growth depending on geodesic distance
-    let geodesicScale = maxPhi - (phiA + phiB) / 2;
-    growthDir.scaleBy(geodesicScale * params.growScale * normalizingFactor);
-    geometry.positions[vB.index] = geometry.positions[vB.index].plus(growthDir);
+    const alpha = 1;
+    let dist = phi.get(v.index, 0);
+    let geodesicScale = Math.pow(maxPhi - dist, alpha);
+    growthDir.scaleBy(geodesicScale * params.growScale);
+    geometry.positions[v.index] = geometry.positions[v.index].plus(growthDir);
   }
 
-  minimizeBend(initialState);
+  if (params.energyMin) {
+    const shells = new DiscreteShells(
+      positions0,
+      geometry.positions,
+      mesh,
+      params.kb,
+      params.timeStep,
+      params.nIter,
+      );
+    shells.minimizeBend();
+  }
 
   balanceMesh();
   
