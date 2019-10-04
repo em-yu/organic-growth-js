@@ -21,13 +21,16 @@ const BEIGE = new Vector(1.0, 0.9, 0.9);
 const ORANGE = new Vector(1.0, 0.5, 0.0);
 const GREEN = new Vector(0.0, 1.0, 0.3);
 
-const MAX_POINTS = 10000;
+const MAX_POINTS = 100000;
+let growCounter = 0;
 
 // GUI
 let sceneState = function() {
   this.growStep = function() { grow() };
+  this.growSteps = function() { growSteps() };
+  this.nSteps = 10;
   this.growScale = 0.05;
-  // this.split = function() { splitEdges() };
+  this.flip = function() { flipEdge() };
   this.energyMin = true;
   this.kb = 10.0;
   this.timeStep = 0.001;
@@ -38,8 +41,10 @@ let sceneState = function() {
 let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'growStep' );
+gui.add( params, 'growSteps' );
+gui.add( params, 'nSteps' );
 gui.add( params, 'growScale' );
-// gui.add( params, 'split' );
+gui.add( params, 'flip' );
 gui.add( params, 'energyMin' );
 gui.add( params, 'kb' );
 gui.add( params, 'timeStep' );
@@ -138,10 +143,12 @@ let normalMat = new THREE.MeshPhongMaterial( {
 let threeMesh = new THREE.Mesh(threeGeometry, normalMat);
 scene.add(threeMesh);
 
+// let pointColor = new THREE.Color( 'rgb(231, 76, 60)' );
 var pointLight = new THREE.PointLight( 0xff0000, 1, 100 );
 pointLight.position.set( 20, 20, 20 );
 scene.add( pointLight );
 
+var ambientColor = new THREE.Color( 'rgb(247, 249, 249)' );
 var ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
 scene.add( ambientLight );
 
@@ -178,16 +185,33 @@ function splitEdges() {
   updateGeometry();
 }
 
+function flipEdge() {
+  let edge = mesh.edges[0];
+  // if (geometry.isFlippable(edge))
+  geometry.flip(edge);
+  updateGeometry();
+}
+
 function balanceMesh() {
+
   for (let e of mesh.edges) {
+    if (geometry.isFlippable(e)) {
+      geometry.flip(e);
+      // console.log("flip edge index " + e.index);
+    }
     const length = geometry.length(e);
     if (length > 0.5) {
       geometry.split(e);
-
-      console.log("split edge index " + e.index)
+      // console.log("split edge index " + e.index)
     }
   }
 
+}
+
+function growSteps() {
+  for (let i = 0; i < params.nSteps; i++) {
+    grow();
+  }
 }
 
 function grow() {
@@ -213,7 +237,7 @@ function grow() {
     }
     let growthDir = gradV.over(-nF);
     // Grow towards the up direction
-    let up = new Vector(0, 0, Math.random());
+    let up = new Vector(0, 0, 0.5);
     growthDir = growthDir.plus(up);
     growthDir.normalize();
 
@@ -240,6 +264,9 @@ function grow() {
   balanceMesh();
   
   updateGeometry();
+
+  growCounter++;
+  console.log("Grow step: " + growCounter)
 }
 
 function updateGeometry() {
