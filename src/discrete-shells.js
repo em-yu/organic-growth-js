@@ -1,9 +1,8 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 
 export default class DiscreteShells {
-	constructor(x0, xi, mesh, kb, timeStep, n) {
-		this.x0 = x0; // vertices positions at t0 (undeformed state)
-		this.xi = xi; // vertices positions at ti (deformed state)
+	constructor(X0, mesh, kb, timeStep, n) {
+		this.X0 = X0; // vertices positions at t0 (undeformed state)
 		this.mesh = mesh; // connectivity info (geometry-processing-js mesh)
 		this.kb = kb,
 		this.h = timeStep;
@@ -11,23 +10,7 @@ export default class DiscreteShells {
 		this.nIter = n;
 	}
 
-	minimizeBend() {
-	
-		for (let it = 0; it < this.nIter; it++) {
-			// Compute gradient of the bending energy
-			const hingeGrad = this.hingeGradient();
-			// Explicit Euler integration
-			// Compute new positions for vertices
-			const nVertex = this.mesh.vertices.length;
-			for (let i = 0; i < nVertex; i++) {
-				let update = hingeGrad[i].times(-this.h2);
-				this.xi[i].incrementBy(update);
-				
-			}
-		}
-	}
-
-	hingeGradient() {
+	bendingForces(Xi) {
 		const nFace = this.mesh.faces.length;
 		const nEdge = this.mesh.edges.length;
 		const nVertex = this.mesh.vertices.length;
@@ -50,8 +33,8 @@ export default class DiscreteShells {
 		for (let i = 0; i < nFace; i++) {
 			const f = this.mesh.faces[i];
 			// Undeformed state
-			const u0 = this.vector_0(f.halfedge);
-			const v0 = this.vector_0(f.halfedge.prev).negated();
+			const u0 = this.vector(f.halfedge, this.X0);
+			const v0 = this.vector(f.halfedge.prev, this.X0).negated();
 			
 			let n0 = u0.cross(v0);
 			let area0 = n0.norm() * 0.5;
@@ -62,8 +45,8 @@ export default class DiscreteShells {
 	
 			// Deformed state
 			// const f = geometry.faces[i];
-			const u = this.vector_i(f.halfedge);
-			const v = this.vector_i(f.halfedge.prev).negated();
+			const u = this.vector(f.halfedge, Xi);
+			const v = this.vector(f.halfedge.prev, Xi).negated();
 			let n = u.cross(v);
 			let area = n.norm() * 0.5;
 			n.divideBy(2 * area);
@@ -82,13 +65,13 @@ export default class DiscreteShells {
 			const fbi = e.halfedge.twin.face.index;
 			
 			// Undeformed state
-			let v0 = this.vector_0(e.halfedge);
+			let v0 = this.vector(e.halfedge, this.X0);
 			let l02 = v0.norm2();
 			v0.divideBy(Math.sqrt(l02));
 			let theta0 = this.dihedralAngle(e.halfedge, v0, faceNormals0[fai], faceNormals0[fbi]);
 	
 			// Deformed state
-			let v = this.vector_i(e.halfedge);
+			let v = this.vector(e.halfedge, Xi);
 			let l = v.norm();
 			v.divideBy(l);
 			let theta = this.dihedralAngle(e.halfedge, v, faceNormals[fai], faceNormals[fbi]);
@@ -100,8 +83,6 @@ export default class DiscreteShells {
 			edgeVectors[i] = v;
 			edgeLengths[i] = l;
 		}
-		// console.log(dP);
-		// console.log(edgeVectors);
 	
 		// Loop over vertices
 		//  - Loop over adjacent edges
@@ -112,7 +93,7 @@ export default class DiscreteShells {
 			
 			for (let e of vi.adjacentEdges()) {
 				// Hinge gradient for outgoing edge wrt vi
-				// he is the halfedge pointing towards x0
+				// he is the halfedge pointing towards X0
 				// e0 is the vector corresponding to he
 				let v0 = edgeVectors[e.index];
 				let he = e.halfedge;
@@ -160,9 +141,9 @@ export default class DiscreteShells {
 				grad.incrementBy(angleGradOpp.times(dPsiOpp));
 	
 			}
-	
 			gradHinge[i] = grad;
 		}
+
 		return gradHinge;
 	}
 
@@ -186,21 +167,9 @@ export default class DiscreteShells {
 	 * 
 	 * @param {Halfedge} h 
 	 */
-	vector_i(h) {
-		let a = this.xi[h.vertex];
-		let b = this.xi[h.next.vertex];
-
-		return b.minus(a);
-	}
-
-	/**
-	 * 
-	 * @param {Halfedge} h 
-	 */
-	vector_0(h) {
-		let a = this.x0[h.vertex];
-		let b = this.x0[h.next.vertex];
-
+	vector(h, X) {
+		let a = X[h.vertex];
+		let b = X[h.next.vertex];
 		return b.minus(a);
 	}
 

@@ -3,18 +3,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 import { Mesh } from '../geometry-processing-js/node/core/mesh';
-import HeatMethod from '../geometry-processing-js/node/projects/geodesic-distance/heat-method';
-// const Mesh = MeshModule[0]; // Mesh class
-// const Geometry = GeometryModule[0]; // Geometry class
 
 import smallDisk from '../geometry-processing-js/input/small_disk.obj';
 
 import DiscreteShells from './discrete-shells';
 import ParticleCollisions from './particle-collisions';
+import EdgeBasedGrowth from './edge-based-growth';
 
 import './style.css';
 
@@ -29,13 +26,11 @@ let growCounter = 0;
 let sceneState = function() {
   this.growStep = function() { grow() };
   this.growSteps = function() { growSteps() };
-  this.repulse = function() { repulse() };
   this.nSteps = 10;
   this.growScale = 0.05;
-  this.flip = function() { flipEdge() };
   this.collisionDetection = true;
   this.energyMin = true;
-  this.kb = 10.0;
+  this.kb = 5.0;
   this.timeStep = 0.001;
   this.nIter = 100;
   this.wireframe = false;
@@ -46,10 +41,8 @@ let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'growStep' );
 gui.add( params, 'growSteps' );
-gui.add( params, 'repulse' );
 gui.add( params, 'nSteps' );
 gui.add( params, 'growScale' );
-gui.add( params, 'flip' );
 gui.add( params, 'collisionDetection' );
 gui.add( params, 'energyMin' );
 gui.add( params, 'kb' );
@@ -87,6 +80,7 @@ console.log(mesh);
 
 // Create geometry object
 let geometry = new Geometry(mesh, polygonSoup["v"], MAX_POINTS);
+raiseEdge(0.1);
 
 // Add colors
 let colors = new Array(mesh.vertices.length);
@@ -155,48 +149,47 @@ var pointLight = new THREE.PointLight( 0xff0000, 1, 100 );
 pointLight.position.set( 20, 20, 20 );
 scene.add( pointLight );
 
-var ambientColor = new THREE.Color( 'rgb(247, 249, 249)' );
 var ambientLight = new THREE.AmbientLight( 0x404040 ); // soft white light
 scene.add( ambientLight );
+
+let sources = getGrowthSources(5);
+console.log(sources);
+
+let GrowthProcess = new EdgeBasedGrowth(geometry, 1.5, 8.0, params.edgeSize * 2.0);
 
 // Render scene
 animate();
 
-function computeGeodesics() {
-  // initialize geodesics in heat
-  let V = mesh.vertices.length;
-  // Vector containing sources
-  let delta = DenseMatrix.zeros(V, 1);
-
-  // Grow edge vertices
+function raiseEdge(z) {
   let boundaryFace = mesh.boundaries[0];
-  // Add heat sources at boundary vertices
   for (let v of boundaryFace.adjacentVertices()) {
-    delta.set(1, v.index, 0);
+    let up;
+    if (z !== undefined)
+      up = z;
+    else
+      up = 2 * (Math.random() - 0.5) / 50;
+    geometry.positions[v.index].incrementBy(new Vector(0, 0, up));
   }
-  let heatMethod = new HeatMethod(geometry);
-
-  return heatMethod.compute(delta);
 }
 
-
-function splitEdges() {
-  // split edge 0
-  let edge = mesh.edges[36];
-  geometry.split(edge);
-  for (let i = 0; i < geometry.indices.length; i++) {
-    indices[i] = geometry.indices[i];
-  };
-
-  updateGeometry();
+function getGrowthSources(nb) {
+  let boundaryFace = mesh.boundaries[0];
+  let nV = 0;
+  for (let v of boundaryFace.adjacentVertices()) {
+    nV++;
+  }
+  let stride = Math.floor(nV / nb);
+  let sources = [];
+  let i = 0;
+  for (let v of boundaryFace.adjacentVertices()) {
+    if (i % stride === 0) {
+      sources.push(v.index);
+    }
+    i++;
+  }
+  return sources;
 }
 
-function flipEdge() {
-  let edge = mesh.edges[0];
-  // if (geometry.isFlippable(edge))
-  geometry.flip(edge);
-  updateGeometry();
-}
 
 function balanceMesh() {
 
@@ -204,16 +197,8 @@ function balanceMesh() {
 
   for (let i = 0; i < nEdges0; i++) {
     const e = mesh.edges[i];
-    const length = geometry.length(e);
-    if (length > params.edgeSize * 2) {
-      if (geometry.isFlippable(e)) {
-        geometry.flip(e);
-        // console.log("flip edge index " + e.index);
-      }
-      else {
-        geometry.split(e);
-        // console.log("split edge index " + e.index)
-      }
+    if (geometry.isFlippable(e)) {
+      geometry.flip(e);
     }
   }
 
@@ -227,80 +212,19 @@ function growSteps() {
 
 function grow() {
 
-  // Store positions before growth
-  const positions0 = Object.assign({}, geometry.positions);
+  GrowthProcess.growEdges();
 
-  let geodesicInfo = computeGeodesics();
-  let phi = geodesicInfo.distance;
-  let grad = geodesicInfo.gradient;
-  console.log(grad);
-  let maxPhi = 0;
-  for (let i = 0; i < phi.nRows(); i++) {
-    maxPhi = Math.max(phi.get(i, 0), maxPhi);
-  }
-  const alpha = 10.0;
-  const scaleNormalizer = Math.pow(maxPhi, alpha);
-
-  let boundaryFace = mesh.boundaries[0];
-  // Add heat sources at boundary vertices
-  for (let v of boundaryFace.adjacentVertices()) {
-    phi.set(0, v.index, 0);
-  }
-
+  // Store positions before energy minimization
+  const positions0 = {};
   for (let v of mesh.vertices) {
-    // Compute the gradient of distance field at the vertex
-    let gradV = new Vector();
-    let nF = 0;
-    for (let f of v.adjacentFaces()) {
-      gradV.incrementBy(grad[f.index]);
-      nF++;
-    };
-    // let growthDir = gradV.over(-nF);
-    let outerDir = gradV.over(-nF);
-    // let outerDir = v.halfedge.face ? grad[v.halfedge.face.index] : grad[v.halfedge.twin.face.index];
-    let normal = geometry.vertexNormalAngleWeighted(v);
-    // let growthDir = outerDir.cross(normal).plus(outerDir.times(2.0));
-    let growthDir = outerDir;
-    // let growthDir = normal.negated();
-    // Grow towards the up direction
-    let up = new Vector(0, 0, 0.5);
-    growthDir = growthDir.plus(up);
-    // let growthDir = new Vector(0, 0, 0.5);
-
-    growthDir.normalize();
-
-    // Scale growth depending on geodesic distance
-    let dist = phi.get(v.index, 0);
-    let geodesicScale = Math.pow(maxPhi - dist, alpha) / scaleNormalizer;
-    growthDir.scaleBy(geodesicScale * params.growScale);
-    geometry.positions[v.index] = geometry.positions[v.index].plus(growthDir);
+    let pos0 = new Vector(
+                geometry.positions[v.index].x,
+                geometry.positions[v.index].y,
+                geometry.positions[v.index].z
+                )
+    positions0[v.index] = pos0;
   }
 
-  updateGeometry();
-
-
-  // if (params.energyMin) {
-  //   shells = new DiscreteShells(
-  //     positions0,
-  //     geometry.positions,
-  //     mesh,
-  //     params.kb,
-  //     params.timeStep,
-  //     params.nIter,
-  //     );
-  //   // shells.minimizeBend();
-  // }
-
-  // if (params.collisionDetection) {
-  //   collisions = new ParticleCollisions(
-  //     mesh,
-  //     geometry.positions,
-  //     0.1,
-  //     1.0);
-  //   // collisions.buildGrid();
-  //   // collisions.collisionForces();
-  // }
-  // console.log(geometry.positions);
   integrateForces(positions0, geometry.positions);
 
   balanceMesh();
@@ -316,24 +240,20 @@ function integrateForces(X0, X) {
   if (params.energyMin) {
     shells = new DiscreteShells(
       X0,
-      X,
+      // X,
       mesh,
       params.kb,
       params.timeStep,
       params.nIter,
       );
-    // shells.minimizeBend();
   }
 
   if (params.collisionDetection) {
     collisions = new ParticleCollisions(
       mesh,
-      X,
-      // 0.5,
+      // X,
       params.edgeSize,
-      1000.0);
-    // collisions.buildGrid();
-    // collisions.collisionForces();
+      200.0);
   }
 
   if (!shells && !collisions)
@@ -345,51 +265,23 @@ function integrateForces(X0, X) {
 
   for (let it = 0; it < params.nIter; it++) {
     // Compute bending forces
-    const bendForces = shells ? shells.hingeGradient() : nullForce;
-    // console.log(bendForces);
+    const bend = shells ? shells.bendingForces(X) : nullForce;
 
     // Compute collision forces
     if (collisions)
-      collisions.buildGrid();
-    const repulsiveForces = collisions ? collisions.collisionForces() : nullForce;
-    console.log(repulsiveForces);
+      collisions.buildGrid(X); // Is it necessary to recompute grid every time?
+    const repulse = collisions ? collisions.repulsiveForces(X) : nullForce;
 
     // Explicit Euler integration
     // Compute new positions for vertices
     for (let i = 0; i < nVertex; i++) {
-      let totalForce = bendForces[i].negated().plus(repulsiveForces[i])
+      let totalForce = bend[i].negated().plus(repulse[i])
       let update = totalForce.times(h2);
-      // let update = repulsiveForces[i].times(h2);
-      // X[i] = X[i].plus(update);
       X[i].incrementBy(update);
     }
-    // updateGeometry();
   }
 }
 
-function repulse() {
-	
-  for (let it = 0; it < params.nIter; it++) {
-    // Compute collision forces
-    const collisions = new ParticleCollisions(
-      mesh,
-      geometry.positions,
-      0.2,
-      50.0);
-    collisions.buildGrid();
-    const repulsiveForces = collisions.collisionForces();
-    // Explicit Euler integration
-    // Compute new positions for vertices
-    const nVertex = mesh.vertices.length;
-    for (let i = 0; i < nVertex; i++) {
-      // let update = hingeGrad[i].plus(repulsiveForces[i]).times(-this.h2);
-      let update = repulsiveForces[i].times(params.timeStep * params.timeStep);
-      geometry.positions[i].incrementBy(update);
-      
-    }
-  }
-  updateGeometry();
-}
 
 function updateGeometry() {
   for (let v of mesh.vertices) {
