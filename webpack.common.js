@@ -6,12 +6,12 @@ module.exports = {
 	node: {
     fs: 'empty'
 	},
-	mode: 'development',
+	// mode: 'development',
 	entry: './src/main.js',
-	devtool: 'inline-source-map',
-	devServer: {
-		contentBase: './dist'
-	},
+	// devtool: 'inline-source-map',
+	// devServer: {
+	// 	contentBase: './dist'
+	// },
 	plugins: [
 		new CleanWebpackPlugin(),
 		new HtmlWebpackPlugin({
