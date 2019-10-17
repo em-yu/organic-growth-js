@@ -5,6 +5,8 @@ import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 import { Mesh } from '../geometry-processing-js/node/core/mesh';
 
+import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
+
 import smallDisk from '../geometry-processing-js/input/small_disk.obj';
 
 import Scene from './scene';
@@ -35,12 +37,14 @@ let sceneState = function() {
   this.nIter = 100;
   this.wireframe = false;
   this.edgeSize = 0.25;
+  this.colorGrowth = true;
 };
 
 let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'playGrowth');
 gui.add( params, 'wireframe' );
+gui.add( params, 'colorGrowth' );
 
 if (process.env.NODE_ENV === 'development') {
   gui.add( params, 'growStep' );
@@ -73,9 +77,12 @@ raiseEdge(0.1);
 
 scene.updateGeometry(mesh, geometry);
 
+// Colors
+let colors = new Array(MAX_POINTS);
+
 // let sources = getGrowthSources(4);
 
-let growthProcess = new EdgeBasedGrowth(geometry, 1.5, 4.0, params.edgeSize * 2.0);
+let growthProcess = new EdgeBasedGrowth(geometry, 1.2, 8.0, params.edgeSize * 2.0);
 
 // Render scene
 animate();
@@ -143,13 +150,18 @@ function grow() {
                 geometry.positions[v.index].z
                 )
     positions0[v.index] = pos0;
+
+    if (params.colorGrowth) {
+      // Compute new vertex colors based on growth factors
+      colors[v.index] = colormap(growthProcess.growthFactors.get(v.index, 0), 0, 1, coolwarm);
+    }
   }
 
   integrateForces(positions0, geometry.positions);
 
   balanceMesh();
   
-  scene.updateGeometry(mesh, geometry);
+  scene.updateGeometry(mesh, geometry, colors);
 
   growCounter++;
   console.log("Grow step: " + growCounter)
@@ -163,8 +175,6 @@ function integrateForces(X0, X) {
       // X,
       mesh,
       params.kb,
-      params.timeStep,
-      params.nIter,
       );
   }
 

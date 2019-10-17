@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+import Vector from '../geometry-processing-js/node/linear-algebra/vector';
+
+const DEFAULT = new Vector(1.0, 0.3, 0.3);
 
 export default class Scene {
 	constructor(MAX_POINTS) {
@@ -41,15 +44,18 @@ export default class Scene {
 		// Initialize Buffers
 		let threePositions = new Float32Array(this.MAX_POINTS * 3);
 		let threeNormals = new Float32Array(this.MAX_POINTS * 3);
+		let threeColors = new Float32Array(this.MAX_POINTS * 3);
 		let indices = new Uint32Array(this.MAX_POINTS * 3);
 
 		// Set geometry
 		this.bufferGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
 		this.bufferGeometry.addAttribute('position', new THREE.BufferAttribute(threePositions, 3));
 		this.bufferGeometry.addAttribute('normal', new THREE.BufferAttribute(threeNormals, 3));
+		this.bufferGeometry.addAttribute('color', new THREE.BufferAttribute(threeColors, 3));
 
 		// Create material
 		const material = new THREE.MeshPhongMaterial( {
+			vertexColors: THREE.VertexColors,
 			side: THREE.DoubleSide,
 			wireframe: false,
 		} );
@@ -60,14 +66,14 @@ export default class Scene {
 
 		// Lights
 		let pointLight = new THREE.PointLight( 0xfff9ed, 1, 100 );
-		pointLight.position.set( 20, 20, 20 );
+		pointLight.position.set( 20, 40, 20 );
 		this.scene.add( pointLight );
 
-		let ambientLight = new THREE.AmbientLight( 0xd15e3b ); // soft white light
+		let ambientLight = new THREE.AmbientLight( 0xe8e8e8 ); // soft white light
 		this.scene.add( ambientLight );
 	}
 
-	updateGeometry(mesh, geometry) {
+	updateGeometry(mesh, geometry, colors) {
 		for (let v of mesh.vertices) {
 			let i = v.index;
 			let position = geometry.positions[i];
@@ -76,6 +82,16 @@ export default class Scene {
 			// Angle weighted normals
 			let normal = geometry.vertexNormalAngleWeighted(v);
 			this.bufferGeometry.attributes.normal.setXYZ(i, normal.x, normal.y, normal.z);
+
+			// Colors
+			let color;
+			if (colors) {
+				color = colors[i];
+			}
+			else {
+				color = DEFAULT;
+			}
+			this.bufferGeometry.attributes.color.setXYZ(i, color.x, color.y, color.z);
 		};
 		// This needs to be done only if there was edge splitting
 		let indices = new Uint32Array(this.MAX_POINTS * 3);
@@ -86,6 +102,7 @@ export default class Scene {
 		this.bufferGeometry.index.set(indices);
 		this.bufferGeometry.attributes.position.needsUpdate = true;
 		this.bufferGeometry.attributes.normal.needsUpdate = true;
+		this.bufferGeometry.attributes.color.needsUpdate = true;
 		this.bufferGeometry.index.needsUpdate = true;
 		this.bufferGeometry.computeBoundingSphere();
 	}
