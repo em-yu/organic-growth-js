@@ -4,6 +4,7 @@ import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 import { Mesh } from '../geometry-processing-js/node/core/mesh';
+// import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 
 import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
 
@@ -164,7 +165,8 @@ function grow() {
   scene.updateGeometry(mesh, geometry, colors);
 
   growCounter++;
-  console.log("Grow step: " + growCounter)
+  console.log("Grow step: " + growCounter);
+  console.log(mesh.vertices.length + " vertices")
 }
 
 function integrateForces(X0, X) {
@@ -191,24 +193,32 @@ function integrateForces(X0, X) {
 
   const h2 = params.timeStep * params.timeStep;
   const nVertex = mesh.vertices.length;
-  const nullForce = Array(nVertex).fill(new Vector());
 
   for (let it = 0; it < params.nIter; it++) {
     // Compute bending forces
-    const bend = shells ? shells.bendingForces(X) : nullForce;
+    const bend = shells ? shells.bendingForces(X) : null;
+    let bendForce = bend ? bend.force : null;
+    let bendDerivative = bend ? bend.derivative : null;
 
     // Compute collision forces
-    if (collisions)
-      collisions.buildGrid(X); // Is it necessary to recompute grid every time?
-    const repulse = collisions ? collisions.repulsiveForces(X) : nullForce;
-
+    const repulse = collisions ? collisions.repulsiveForces(X) : null;
+    let repulseForce = repulse ? repulse.force : null;
+    let repulseDerivative = repulse ? repulse.derivative : null;
+    
     // Explicit Euler integration
     // Compute new positions for vertices
     for (let i = 0; i < nVertex; i++) {
-      let totalForce = bend[i].negated().plus(repulse[i])
+      let iBend = shells ? new Vector(bendForce.get(0, 3 * i), bendForce.get(0, 3 * i + 1), bendForce.get(0, 3 * i + 2)) : new Vector();
+      let iRepulse = collisions ? new Vector(repulseForce.get(0, 3 * i), repulseForce.get(0, 3 * i + 1), repulseForce.get(0, 3 * i + 2)) : new Vector();
+      let totalForce = iBend.negated().plus(iRepulse);
       let update = totalForce.times(h2);
       X[i].incrementBy(update);
     }
+    // Free up memory
+    bendForce.delete();
+    repulseForce.delete();
+    bendDerivative.delete();
+    repulseDerivative.delete();
   }
 }
 

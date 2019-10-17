@@ -1,13 +1,14 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
+import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
+import sparse from '../geometry-processing-js/node/linear-algebra/sparse-matrix';
+const SparseMatrix = sparse[0];
+const Triplet = sparse[1];
 
 export default class DiscreteShells {
-	constructor(X0, mesh, kb, timeStep, n) {
+	constructor(X0, mesh, kb) {
 		this.X0 = X0; // vertices positions at t0 (undeformed state)
 		this.mesh = mesh; // connectivity info (geometry-processing-js mesh)
-		this.kb = kb,
-		this.h = timeStep;
-		this.h2 = timeStep * timeStep;
-		this.nIter = n;
+		this.kb = kb;
 	}
 
 	bendingForces(Xi) {
@@ -24,8 +25,10 @@ export default class DiscreteShells {
 		let edgeLengths = new Array(nEdge);
 		let dP = new Array(nEdge);
 	
-		// Gradient of the hinge energy
-		let gradHinge = new Array(nVertex);
+		// Bending force
+		let forceTriplet = new Triplet(1, 3 * nVertex);
+		// Angle gradient
+		let angleGradTriplet = new Triplet(1, 3 * nVertex);
 	
 		// Loop over faces:
 		// - face normals
@@ -90,9 +93,10 @@ export default class DiscreteShells {
 		for (let i = 0; i < nVertex; i++) {
 			const vi = this.mesh.vertices[i];
 			let grad = new Vector();
+			let fi = new Vector();
 			
 			for (let e of vi.adjacentEdges()) {
-				// Hinge gradient for outgoing edge wrt vi
+				// Hinge forceient for outgoing edge wrt vi
 				// he is the halfedge pointing towards X0
 				// e0 is the vector corresponding to he
 				let v0 = edgeVectors[e.index];
@@ -131,20 +135,44 @@ export default class DiscreteShells {
 				// Hinge gradient of edge e wrt vertex vi
 				let angleGrad = n1.times(cos1/alt1).plus(n2.times(cos2/alt2));
 				// console.log("angleGrad.z of vertex " + i + " " + angleGrad.z);
-				grad.incrementBy(angleGrad.times(dPsi));
+				fi.incrementBy(angleGrad.times(dPsi));
+				grad.incrementBy(angleGrad);
 	
 				// Hinge gradient for opposite edge wrt vi
 				let eOpp = he.twin.next.edge;
 				// dPsi
 				let dPsiOpp = dP[eOpp.index];
 				let angleGradOpp = n1.times(-1/alt1);
-				grad.incrementBy(angleGradOpp.times(dPsiOpp));
+				fi.incrementBy(angleGradOpp.times(dPsiOpp));
+				grad.incrementBy(angleGradOpp);
 	
 			}
-			gradHinge[i] = grad;
+			if (fi.norm() > 0.1) {
+				forceTriplet.addEntry(fi.x, 0, 3 * i);
+				forceTriplet.addEntry(fi.y, 0, 3 * i + 1);
+				forceTriplet.addEntry(fi.z, 0, 3 * i + 2);
+
+				angleGradTriplet.addEntry(grad.x, 0, 3 * i);
+				angleGradTriplet.addEntry(grad.y, 0, 3 * i + 1);
+				angleGradTriplet.addEntry(grad.z, 0, 3 * i + 2);
+			}
 		}
 
-		return gradHinge;
+		let forceSparse = SparseMatrix.fromTriplet(forceTriplet);
+		forceTriplet.delete();
+		let angleGradSparse = SparseMatrix.fromTriplet(angleGradTriplet);
+		angleGradTriplet.delete();
+		let forceDerivative = forceSparse.transpose().timesSparse(angleGradSparse);
+		angleGradSparse.delete();
+
+		let forceDense = forceSparse.toDense();
+
+		forceSparse.delete();
+
+		return {
+			force: forceDense,
+			derivative: forceDerivative
+		};
 	}
 
 	/**
