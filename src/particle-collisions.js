@@ -66,21 +66,53 @@ export default class ParticleCollisions {
 				vij.divideBy(lij);
 
 				// Determine relaxed distance, depending on if adjacent or not
-				let fij = new Vector();
-				if (adjacents.includes(neighborIdx)) {
+				// let fij = new Vector();
+				// if (adjacents.includes(neighborIdx)) {
 					let l0 = this.resolution * 0.9;
 					let delta = lij - l0;
-					if (delta < 0) {
-					 fij = vij.times(this.k * delta)
+					// if (delta < 0) {
+					let fij = vij.times(this.k * delta);
+
+					// Derivative (jacobian)
+					// A = delta * I3
+					let A = DenseMatrix.identity(3, 3).timesReal(delta * this.k);
+
+					// B = vij * grad(||vij||)
+					let Vij = DenseMatrix.zeros(3, 1);
+					Vij.set(vij.x, 0, 0);
+					Vij.set(vij.y, 1, 0);
+					Vij.set(vij.z, 2, 0);
+					let VijT = Vij.transpose();
+					let B = Vij.timesDense(VijT);
+					B.scaleBy(lij * this.k);
+					VijT.delete();
+					Vij.delete();
+
+					let Dij = A.plus(B);
+					A.delete();
+					B.delete();
+
+					const i = v.index;
+					const j = neighborIdx;
+
+					for (let k = 0; k < 3; k++) {
+						for (let l = 0; l < 3; l++) {
+							jacobianTriplet.addEntry(Dij.get(k, l), 3 * i + k, 3 * j + l);
+						}
 					}
-				}
-				else {
-					let l0 = this.resolution * 0.9;
-					let delta = lij - l0;
-					if (delta < 0) {
-						fij = vij.times(this.k * delta);
-					}
-				}
+
+					Dij.delete();
+
+
+					// }
+				// }
+				// else {
+				// 	let l0 = this.resolution * 0.9;
+				// 	let delta = lij - l0;
+				// 	if (delta < 0) {
+				// 		fij = vij.times(this.k * delta);
+				// 	}
+				// }
 				
 				fi.incrementBy(fij);
 			}
@@ -94,9 +126,9 @@ export default class ParticleCollisions {
 		}
 		let repulsiveSparse = SparseMatrix.fromTriplet(repulsiveTriplet);
 		repulsiveTriplet.delete();
-		let repulsiveDense = repulsiveSparse.toDense();
+		let repulsiveDense = repulsiveSparse.transpose().toDense();
 		repulsiveSparse.delete();
-		let forceDerivative = DenseMatrix.zeros(nVertex * 3, nVertex * 3);
+		let forceDerivative = SparseMatrix.fromTriplet(jacobianTriplet);
 		return {
 			force: repulsiveDense,
 			derivative: forceDerivative

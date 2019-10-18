@@ -4,6 +4,10 @@ import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 import { Mesh } from '../geometry-processing-js/node/core/mesh';
+import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
+import sparse from '../geometry-processing-js/node/linear-algebra/sparse-matrix';
+const SparseMatrix = sparse[0];
+const Triplet = sparse[1];
 // import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 
 import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
@@ -185,13 +189,14 @@ function integrateForces(X0, X) {
       mesh,
       // X,
       params.edgeSize,
-      200.0);
+      100.0);
   }
 
   if (!shells && !collisions)
     return;
 
   const h2 = params.timeStep * params.timeStep;
+  const m = 1;
   const nVertex = mesh.vertices.length;
 
   for (let it = 0; it < params.nIter; it++) {
@@ -204,21 +209,54 @@ function integrateForces(X0, X) {
     const repulse = collisions ? collisions.repulsiveForces(X) : null;
     let repulseForce = repulse ? repulse.force : null;
     let repulseDerivative = repulse ? repulse.derivative : null;
-    
-    // Explicit Euler integration
-    // Compute new positions for vertices
-    for (let i = 0; i < nVertex; i++) {
-      let iBend = shells ? new Vector(bendForce.get(0, 3 * i), bendForce.get(0, 3 * i + 1), bendForce.get(0, 3 * i + 2)) : new Vector();
-      let iRepulse = collisions ? new Vector(repulseForce.get(0, 3 * i), repulseForce.get(0, 3 * i + 1), repulseForce.get(0, 3 * i + 2)) : new Vector();
-      let totalForce = iBend.negated().plus(iRepulse);
-      let update = totalForce.times(h2);
-      X[i].incrementBy(update);
+
+    // Implicit Euler
+    // Solve for dV : (I - (h2/m) * forceDerivatives) * dV = (h/m) * forces
+    // Build left hand matrix of the equation 
+    let A = SparseMatrix.identity(nVertex * 3, nVertex * 3);
+
+    // Build right and side of the equation
+    let B = DenseMatrix.zeros(nVertex * 3, 1);
+
+    if (bend) {
+      A.incrementBy(bendDerivative.timesReal(h2/m));
+      B.incrementBy(bendForce.negated());
     }
+    if (repulse) {
+      A.incrementBy(repulseDerivative.timesReal(-h2/m));
+      B.incrementBy(repulseForce);
+    }
+    B.scaleBy(params.timeStep / m);
+
+    // Solve
+    let qr = A.qr();
+    let dV = qr.solve(B);
+
+    // Update positions
+    for (let i = 0; i < nVertex; i++) {
+      let dVi = new Vector(dV.get(3 * i, 0), dV.get(3 * i + 1, 0), dV.get(3 * i + 2, 0));
+      X[i].incrementBy(dVi.times(params.timeStep));
+    }
+
+    
+    // // Explicit Euler integration
+    // // Compute new positions for vertices
+    // for (let i = 0; i < nVertex; i++) {
+    //   let iBend = shells ? new Vector(bendForce.get(3 * i, 0), bendForce.get(3 * i + 1, 0), bendForce.get(3 * i + 2, 0)) : new Vector();
+    //   let iRepulse = collisions ? new Vector(repulseForce.get(3 * i, 0), repulseForce.get(3 * i + 1, 0), repulseForce.get(3 * i + 2, 0)) : new Vector();
+    //   let totalForce = iBend.negated().plus(iRepulse);
+    //   let update = totalForce.times(h2);
+    //   X[i].incrementBy(update);
+    // }
     // Free up memory
-    bendForce.delete();
-    repulseForce.delete();
-    bendDerivative.delete();
-    repulseDerivative.delete();
+    if (bend) {
+      bendForce.delete();
+      bendDerivative.delete();
+    }
+    if (repulse) {
+      repulseForce.delete();
+      repulseDerivative.delete();
+    }
   }
 }
 

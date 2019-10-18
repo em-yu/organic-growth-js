@@ -165,7 +165,7 @@ export default class DiscreteShells {
 		let forceDerivative = forceSparse.transpose().timesSparse(angleGradSparse);
 		angleGradSparse.delete();
 
-		let forceDense = forceSparse.toDense();
+		let forceDense = forceSparse.transpose().toDense();
 
 		forceSparse.delete();
 
