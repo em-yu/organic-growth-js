@@ -1,5 +1,4 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 import sparse from '../geometry-processing-js/node/linear-algebra/sparse-matrix';
 const SparseMatrix = sparse[0];
 const Triplet = sparse[1];
@@ -71,21 +70,29 @@ export default class DiscreteShells {
 			let v0 = this.vector(e.halfedge, this.X0);
 			let l02 = v0.norm2();
 			v0.divideBy(Math.sqrt(l02));
-			let theta0 = this.dihedralAngle(e.halfedge, v0, faceNormals0[fai], faceNormals0[fbi]);
 	
 			// Deformed state
 			let v = this.vector(e.halfedge, Xi);
 			let l = v.norm();
 			v.divideBy(l);
-			let theta = this.dihedralAngle(e.halfedge, v, faceNormals[fai], faceNormals[fbi]);
-	
-			// Store info
-			// console.log("edge index " + i + " angle difference " + (theta - theta0));
-			// console.log("coeff " + (l02 / (faceAreas0[fai] + faceAreas0[fbi])));
-			dP[i] = this.kb * 6 * l02 * (theta - theta0) / (faceAreas0[fai] + faceAreas0[fbi]);
+
+			if (!e.onBoundary()) {
+				let theta0 = this.dihedralAngle(e.halfedge, v0, faceNormals0[fai], faceNormals0[fbi]);
+				let theta = this.dihedralAngle(e.halfedge, v, faceNormals[fai], faceNormals[fbi]);
+
+				// console.log("edge index " + i + " angle difference " + (theta - theta0).toExponential());
+				// console.log("coeff " + (l02 / (faceAreas0[fai] + faceAreas0[fbi])));
+				dP[i] = -1 * this.kb * 6 * l02 * (theta - theta0) / (faceAreas0[fai] + faceAreas0[fbi]);
+			}
+			else {
+				dP[i] = 0;
+			}
+
 			edgeVectors[i] = v;
 			edgeLengths[i] = l;
 		}
+		
+		// console.log(dP);
 	
 		// Loop over vertices
 		//  - Loop over adjacent edges
@@ -95,59 +102,89 @@ export default class DiscreteShells {
 			let grad = new Vector();
 			let fi = new Vector();
 			
-			for (let e of vi.adjacentEdges()) {
-				// Hinge forceient for outgoing edge wrt vi
-				// he is the halfedge pointing towards X0
-				// e0 is the vector corresponding to he
-				let v0 = edgeVectors[e.index];
-				let he = e.halfedge;
-				if (e.halfedge.vertex.index === i) {
-					v0 = v0.negated();
-					he = he.twin;
+			// for (let e of vi.adjacentEdges()) {
+			for (let ohe of vi.adjacentHalfedges()) {
+				// ohe is an outgoing halfedge
+
+				// Hinge gradient for outgoing edge wrt vi
+				// he is the halfedge pointing towards x0
+				// v0 is the vector corresponding to he
+				let he = ohe.twin; // ingoing halfedge
+				let e = he.edge;
+				// let vhe = edgeVectors[e.index];
+				let vhe = this.vector(he, Xi);
+				vhe.normalize();
+
+				let n1;
+				let alt1;
+				if (!e.onBoundary()) {
+
+					// Cosine of alpha1
+					let he1 = he.twin.next;
+					let v1 = edgeVectors[he1.edge.index].times(this.orientation(he1));
+					let cos1 = vhe.dot(v1);
+		
+					// Cosine of alpha2
+					let he2 = he.prev;
+					let v2 = edgeVectors[he2.edge.index].times(this.orientation(he2));
+					let cos2 = -vhe.dot(v2);
+		
+					// Triangles
+					const f2 = he.face;
+					const f1 = he.twin.face;
+		
+					// Altitudes
+					alt1 = faceAreas[f1.index] * 2 / edgeLengths[he1.edge.index];
+					let alt2 = faceAreas[f2.index] * 2 / edgeLengths[he2.edge.index];
+		
+					// Normals
+					n1 = faceNormals[f1.index];
+					let n2 = faceNormals[f2.index];
+		
+					// dPsi
+					let dPsi = dP[e.index];
+		
+					// Hinge gradient of edge e wrt vertex vi
+					let angleGrad = n1.times(cos1/alt1).plus(n2.times(cos2/alt2));
+					// console.log("angleGrad.z of vertex " + i + " " + angleGrad.z);
+					fi.incrementBy(angleGrad.times(dPsi));
+					grad.incrementBy(angleGrad);
 				}
-				// Cosine of alpha1
-				let he1 = he.twin.next;
-				let v1 = edgeVectors[he1.edge.index];
-				v1.scaleBy(this.orientation(he1)); // fix orientation
-				let cos1 = v0.dot(v1);
-	
-				// Cosine of alpha2
-				let he2 = he.prev;
-				let v2 = edgeVectors[he2.edge.index];
-				v2.scaleBy(this.orientation(he2) * (-1)); // fix orientation
-				let cos2 = v0.dot(v2);
-	
-				// Triangles
-				const f2 = he.face;
-				const f1 = he.twin.face;
-	
-				// Altitudes
-				let alt1 = faceAreas[f1.index] * 2 / edgeLengths[he1.edge.index];
-				let alt2 = faceAreas[f2.index] * 2 / edgeLengths[he2.edge.index];
-	
-				// Normals
-				let n1 = faceNormals[f1.index];
-				let n2 = faceNormals[f2.index];
-	
-				// dPsi
-				let dPsi = dP[e.index];
-	
-				// Hinge gradient of edge e wrt vertex vi
-				let angleGrad = n1.times(cos1/alt1).plus(n2.times(cos2/alt2));
-				// console.log("angleGrad.z of vertex " + i + " " + angleGrad.z);
-				fi.incrementBy(angleGrad.times(dPsi));
-				grad.incrementBy(angleGrad);
+				else {
+					if (!he.onBoundary) {
+						const f1 = he.face;
+						const he1 = he.next;
+						// Altitude
+						alt1 = faceAreas[f1.index] * 2 / edgeLengths[he1.edge.index];
+			
+						// Normal
+						n1 = faceNormals[f1.index];
+					}
+				}
 	
 				// Hinge gradient for opposite edge wrt vi
-				let eOpp = he.twin.next.edge;
-				// dPsi
-				let dPsiOpp = dP[eOpp.index];
-				let angleGradOpp = n1.times(-1/alt1);
-				fi.incrementBy(angleGradOpp.times(dPsiOpp));
-				grad.incrementBy(angleGradOpp);
+				let eOpp;
+				if (!e.onBoundary())
+					eOpp = he.twin.next.edge;
+				else {
+					if (!he.onBoundary) {
+						eOpp = he.next.edge;
+					}
+				}
+				if (eOpp && !eOpp.onBoundary()) {
+					// dPsi
+					let dPsiOpp = dP[eOpp.index];
+
+					let angleGradOpp = n1.times(-1/alt1);
+					fi.incrementBy(angleGradOpp.times(dPsiOpp));
+					grad.incrementBy(angleGradOpp);
+				}
 	
 			}
-			if (fi.norm() > 0.1) {
+
+			// console.log("vertex " + i + " " + fi.z);
+
+			if (fi.norm() > 10e-3) {
 				forceTriplet.addEntry(fi.x, 0, 3 * i);
 				forceTriplet.addEntry(fi.y, 0, 3 * i + 1);
 				forceTriplet.addEntry(fi.z, 0, 3 * i + 2);
@@ -159,15 +196,11 @@ export default class DiscreteShells {
 		}
 
 		let forceSparse = SparseMatrix.fromTriplet(forceTriplet);
-		forceTriplet.delete();
 		let angleGradSparse = SparseMatrix.fromTriplet(angleGradTriplet);
-		angleGradTriplet.delete();
 		let forceDerivative = forceSparse.transpose().timesSparse(angleGradSparse);
-		angleGradSparse.delete();
 
 		let forceDense = forceSparse.transpose().toDense();
 
-		forceSparse.delete();
 
 		return {
 			force: forceDense,
@@ -205,8 +238,8 @@ export default class DiscreteShells {
 	 * 
 	 * @param {Halfedge} halfedge 
 	 */
-	orientation(halfedge) {
-		return halfedge.edge.halfedge.index === halfedge.index ? 1 : -1;
+	orientation(he) {
+		return he.edge.halfedge.index === he.index ? 1 : -1;
 	}
 
 

@@ -107,6 +107,20 @@ export default class Scene {
 		this.bufferGeometry.computeBoundingSphere();
 	}
 
+	drawVectors(mesh, geometry, vectors) {
+		for (let v of mesh.vertices) {
+			let i = v.index;
+			let dir = new THREE.Vector3(vectors[i].x, vectors[i].y, vectors[i].z);
+			var origin = new THREE.Vector3( geometry.positions[i].x, geometry.positions[i].y, geometry.positions[i].z );
+			var length = dir.length() + 0.01;
+			dir.normalize();
+			var hex = 0xffff00;
+
+			var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+			this.scene.add( arrowHelper );
+		}
+	}
+
 	render(params) {
 		if (this.resizeRendererToDisplaySize()) {
 			const canvas = this.renderer.domElement;

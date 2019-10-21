@@ -7,8 +7,7 @@ import { Mesh } from '../geometry-processing-js/node/core/mesh';
 import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 import sparse from '../geometry-processing-js/node/linear-algebra/sparse-matrix';
 const SparseMatrix = sparse[0];
-const Triplet = sparse[1];
-// import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
+import MemoryManager from '../geometry-processing-js/node/linear-algebra/emscripten-memory-manager';
 
 import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
 
@@ -38,8 +37,9 @@ let sceneState = function() {
   this.collisionDetection = true;
   this.energyMin = true;
   this.kb = 5.0;
-  this.timeStep = 0.001;
-  this.nIter = 100;
+  this.ke = 100.0;
+  this.timeStep = 0.01;
+  this.nIter = 2;
   this.wireframe = false;
   this.edgeSize = 0.25;
   this.colorGrowth = true;
@@ -59,6 +59,7 @@ if (process.env.NODE_ENV === 'development') {
   gui.add( params, 'collisionDetection' );
   gui.add( params, 'energyMin' );
   gui.add( params, 'kb' );
+  gui.add( params, 'ke' );
   gui.add( params, 'timeStep' );
   gui.add( params, 'nIter' );
 
@@ -84,6 +85,9 @@ scene.updateGeometry(mesh, geometry);
 
 // Colors
 let colors = new Array(MAX_POINTS);
+
+// Vectors
+let vectors = new Array(MAX_POINTS);
 
 // let sources = getGrowthSources(4);
 
@@ -162,11 +166,12 @@ function grow() {
     }
   }
 
-  integrateForces(positions0, geometry.positions);
-
   balanceMesh();
+
+  integrateForces(positions0, geometry.positions);
   
   scene.updateGeometry(mesh, geometry, colors);
+  // scene.drawVectors(mesh, geometry, vectors);
 
   growCounter++;
   console.log("Grow step: " + growCounter);
@@ -189,7 +194,7 @@ function integrateForces(X0, X) {
       mesh,
       // X,
       params.edgeSize,
-      100.0);
+      params.ke);
   }
 
   if (!shells && !collisions)
@@ -201,7 +206,7 @@ function integrateForces(X0, X) {
 
   for (let it = 0; it < params.nIter; it++) {
     // Compute bending forces
-    const bend = shells ? shells.bendingForces(X) : null;
+    const bend = shells && it > 0 ? shells.bendingForces(X) : null;
     let bendForce = bend ? bend.force : null;
     let bendDerivative = bend ? bend.derivative : null;
 
@@ -215,12 +220,12 @@ function integrateForces(X0, X) {
     // Build left hand matrix of the equation 
     let A = SparseMatrix.identity(nVertex * 3, nVertex * 3);
 
-    // Build right and side of the equation
+    // Build right hand side of the equation
     let B = DenseMatrix.zeros(nVertex * 3, 1);
 
     if (bend) {
-      A.incrementBy(bendDerivative.timesReal(h2/m));
-      B.incrementBy(bendForce.negated());
+      A.incrementBy(bendDerivative.timesReal(-h2/m));
+      B.incrementBy(bendForce);
     }
     if (repulse) {
       A.incrementBy(repulseDerivative.timesReal(-h2/m));
@@ -234,30 +239,14 @@ function integrateForces(X0, X) {
 
     // Update positions
     for (let i = 0; i < nVertex; i++) {
+      // vectors[i] = bendForce ? new Vector(bendForce.get(3 * i, 0), bendForce.get(3 * i + 1, 0), bendForce.get(3 * i + 2, 0)) : new Vector();
       let dVi = new Vector(dV.get(3 * i, 0), dV.get(3 * i + 1, 0), dV.get(3 * i + 2, 0));
+      // console.log(dVi);
       X[i].incrementBy(dVi.times(params.timeStep));
-    }
+    }		
 
-    
-    // // Explicit Euler integration
-    // // Compute new positions for vertices
-    // for (let i = 0; i < nVertex; i++) {
-    //   let iBend = shells ? new Vector(bendForce.get(3 * i, 0), bendForce.get(3 * i + 1, 0), bendForce.get(3 * i + 2, 0)) : new Vector();
-    //   let iRepulse = collisions ? new Vector(repulseForce.get(3 * i, 0), repulseForce.get(3 * i + 1, 0), repulseForce.get(3 * i + 2, 0)) : new Vector();
-    //   let totalForce = iBend.negated().plus(iRepulse);
-    //   let update = totalForce.times(h2);
-    //   X[i].incrementBy(update);
-    // }
-    // Free up memory
-    if (bend) {
-      bendForce.delete();
-      bendDerivative.delete();
-    }
-    if (repulse) {
-      repulseForce.delete();
-      repulseDerivative.delete();
-    }
   }
+  MemoryManager.deleteExcept([growthProcess.growthFactors]);
 }
 
 function animate() {
