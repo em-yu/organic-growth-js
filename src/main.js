@@ -1,5 +1,7 @@
 import * as dat from 'dat.gui';
 
+import MeanCurvatureFlow from '../geometry-processing-js/node/projects/geometric-flow/mean-curvature-flow';
+
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
@@ -38,11 +40,15 @@ let sceneState = function() {
   this.energyMin = true;
   this.kb = 5.0;
   this.ke = 100.0;
+  this.implicit = true;
+  this.chol = true;
   this.timeStep = 0.01;
   this.nIter = 2;
   this.wireframe = false;
   this.edgeSize = 0.25;
   this.colorGrowth = true;
+  this.smoothMesh = function() { smoothMesh() };
+  this.exportOBJ = function() { exportOBJ() };
 };
 
 let params = new sceneState();
@@ -50,6 +56,7 @@ const gui = new dat.GUI();
 gui.add( params, 'playGrowth');
 gui.add( params, 'wireframe' );
 gui.add( params, 'colorGrowth' );
+gui.add( params, 'exportOBJ' );
 
 if (process.env.NODE_ENV === 'development') {
   gui.add( params, 'growStep' );
@@ -60,10 +67,53 @@ if (process.env.NODE_ENV === 'development') {
   gui.add( params, 'energyMin' );
   gui.add( params, 'kb' );
   gui.add( params, 'ke' );
+  gui.add( params, 'implicit' );
+  gui.add( params, 'chol' );
   gui.add( params, 'timeStep' );
   gui.add( params, 'nIter' );
 
   gui.add( params, 'edgeSize' );
+
+  gui.add( params, 'smoothMesh' );
+
+}
+
+function exportOBJ() {
+
+  let positions = new Array(mesh.vertices.length * 3);
+  let normals = new Array(mesh.vertices.length * 3);
+
+  for (let v of mesh.vertices) {
+    let i = v.index;
+
+    let position = geometry.positions[v];
+    positions[3 * i + 0] = position.x;
+    positions[3 * i + 1] = position.y;
+    positions[3 * i + 2] = position.z;
+
+    let normal = geometry.vertexNormalEquallyWeighted(v);
+    normals[3 * i + 0] = normal.x;
+    normals[3 * i + 1] = normal.y;
+    normals[3 * i + 2] = normal.z;
+  }
+
+  let text = MeshIO.writeOBJ({
+    "v": positions,
+    "vt": undefined,
+    "vn": normals,
+    "f": geometry.indices
+  })
+
+  let element = document.createElement("a");
+  element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
+  element.setAttribute("download", "export.obj");
+
+  element.style.display = "none";
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
 }
 
 // Init THREE.js scene
@@ -91,7 +141,7 @@ let vectors = new Array(MAX_POINTS);
 
 // let sources = getGrowthSources(4);
 
-let growthProcess = new EdgeBasedGrowth(geometry, 1.2, 8.0, params.edgeSize * 2.0);
+let growthProcess = new EdgeBasedGrowth(geometry, 1.2, 6.0, params.edgeSize * 2.0);
 
 // Render scene
 animate();
@@ -140,10 +190,44 @@ function balanceMesh() {
 
 }
 
+function smoothMesh() {
+  for (let v of mesh.vertices) {
+    if (v.onBoundary())
+      continue;
+    let vPos = geometry.positions[v.index];
+    let barycenter = new Vector();
+    let n = 0;
+    for (let adjacent of v.adjacentVertices()) {
+      const aPos = geometry.positions[adjacent.index];
+      barycenter.incrementBy(aPos);
+      n++;
+    }
+    if (n > 0) {
+      barycenter.divideBy(n);
+      let smoothing = barycenter.minus(vPos);
+      let normal = geometry.vertexNormalAngleWeighted(v);
+      let sn = smoothing.dot(normal);
+      smoothing.decrementBy(normal.times(sn));
+      smoothing.scaleBy(0.1);
+
+      // Move vertex to tangential barycenter of neighbors
+      geometry.positions[v.index].incrementBy(smoothing);
+    }
+  }
+  scene.updateGeometry(mesh, geometry, colors);
+}
+
 function growSteps() {
   for (let i = 0; i < params.nSteps; i++) {
     grow();
   }
+}
+
+function meanCurvSmooth() {
+  let meanCurvatureFlow = new MeanCurvatureFlow(geometry);
+  let h = 0.001;
+  meanCurvatureFlow.integrate(h);
+  scene.updateGeometry(mesh, geometry, colors);
 }
 
 function grow() {
@@ -168,8 +252,9 @@ function grow() {
 
   balanceMesh();
 
+
   integrateForces(positions0, geometry.positions);
-  
+  smoothMesh();
   scene.updateGeometry(mesh, geometry, colors);
   // scene.drawVectors(mesh, geometry, vectors);
 
@@ -210,8 +295,10 @@ function integrateForces(X0, X) {
     let bendForce = bend ? bend.force : null;
     let bendDerivative = bend ? bend.derivative : null;
 
+    // if (bendForce) console.log(bendForce.norm(0));
+
     // Compute collision forces
-    const repulse = collisions ? collisions.repulsiveForces(X) : null;
+    const repulse = collisions && it == 0 ? collisions.repulsiveForces(X) : null;
     let repulseForce = repulse ? repulse.force : null;
     let repulseDerivative = repulse ? repulse.derivative : null;
 
@@ -233,9 +320,22 @@ function integrateForces(X0, X) {
     }
     B.scaleBy(params.timeStep / m);
 
-    // Solve
-    let qr = A.qr();
-    let dV = qr.solve(B);
+    let dV;
+
+    if (params.implicit) {
+      // Solve
+      if (params.chol) {
+        let llt = A.chol();
+        dV = llt.solvePositiveDefinite(B);
+      }
+      else {
+        let qr = A.qr();
+        dV = qr.solve(B);
+      }
+    }
+    else {
+      dV = B;
+    }
 
     // Update positions
     for (let i = 0; i < nVertex; i++) {
@@ -247,6 +347,8 @@ function integrateForces(X0, X) {
 
   }
   MemoryManager.deleteExcept([growthProcess.growthFactors]);
+
+
 }
 
 function animate() {

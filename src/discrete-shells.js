@@ -23,6 +23,7 @@ export default class DiscreteShells {
 		let edgeVectors = new Array(nEdge);
 		let edgeLengths = new Array(nEdge);
 		let dP = new Array(nEdge);
+		let d2P = new Array(nEdge);
 	
 		// Bending force
 		let forceTriplet = new Triplet(1, 3 * nVertex);
@@ -83,10 +84,12 @@ export default class DiscreteShells {
 				// console.log("edge index " + i + " angle difference " + (theta - theta0).toExponential());
 				// console.log("coeff " + (l02 / (faceAreas0[fai] + faceAreas0[fbi])));
 				dP[i] = -1 * this.kb * 6 * l02 * (theta - theta0) / (faceAreas0[fai] + faceAreas0[fbi]);
+				d2P[i] = Math.sqrt(this.kb * 6 * l02 / (faceAreas0[fai] + faceAreas0[fbi]));
 			}
-			else {
-				dP[i] = 0;
-			}
+			// else {
+			// 	dP[i] = 0;
+			// 	d2P[i] = 0;
+			// }
 
 			edgeVectors[i] = v;
 			edgeLengths[i] = l;
@@ -143,12 +146,13 @@ export default class DiscreteShells {
 		
 					// dPsi
 					let dPsi = dP[e.index];
+					let d2Psi = d2P[e.index];
 		
 					// Hinge gradient of edge e wrt vertex vi
 					let angleGrad = n1.times(cos1/alt1).plus(n2.times(cos2/alt2));
 					// console.log("angleGrad.z of vertex " + i + " " + angleGrad.z);
 					fi.incrementBy(angleGrad.times(dPsi));
-					grad.incrementBy(angleGrad);
+					grad.incrementBy(angleGrad.times(d2Psi));
 				}
 				else {
 					if (!he.onBoundary) {
@@ -174,17 +178,18 @@ export default class DiscreteShells {
 				if (eOpp && !eOpp.onBoundary()) {
 					// dPsi
 					let dPsiOpp = dP[eOpp.index];
+					let d2PsiOpp = d2P[eOpp.index];
 
 					let angleGradOpp = n1.times(-1/alt1);
 					fi.incrementBy(angleGradOpp.times(dPsiOpp));
-					grad.incrementBy(angleGradOpp);
+					grad.incrementBy(angleGradOpp.times(d2PsiOpp));
 				}
 	
 			}
 
 			// console.log("vertex " + i + " " + fi.z);
 
-			if (fi.norm() > 10e-3) {
+			if (grad.norm() > 10e-3) {
 				forceTriplet.addEntry(fi.x, 0, 3 * i);
 				forceTriplet.addEntry(fi.y, 0, 3 * i + 1);
 				forceTriplet.addEntry(fi.z, 0, 3 * i + 2);
@@ -197,7 +202,7 @@ export default class DiscreteShells {
 
 		let forceSparse = SparseMatrix.fromTriplet(forceTriplet);
 		let angleGradSparse = SparseMatrix.fromTriplet(angleGradTriplet);
-		let forceDerivative = forceSparse.transpose().timesSparse(angleGradSparse);
+		let forceDerivative = angleGradSparse.transpose().timesSparse(angleGradSparse).timesReal(-1);
 
 		let forceDense = forceSparse.transpose().toDense();
 
