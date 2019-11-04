@@ -19,19 +19,19 @@ export default class ParticleCollisions {
 	 * @param {Mesh} mesh 
 	 * @param {Vector[]} Xi positions of all vertices
 	 */
-	buildGrid(Xi) {
+	fillGrid(Xi) {
 		let grid = new Grid(this.resolution);
 		for (let v of this.mesh.vertices) {
 			const idx = v.index;
 			const pos = Xi[idx];
 			grid.add(pos, idx);
 		}
-		this.grid = grid;
+		return grid;
 	}
 
 	repulsiveForces(Xi) {
 		// Build grid
-		this.buildGrid(Xi);
+		const grid = this.fillGrid(Xi);
 
 		let nVertex = this.mesh.vertices.length;
 		// let repulsiveForce = new Array(this.mesh.vertices.length);
@@ -47,7 +47,7 @@ export default class ParticleCollisions {
 				adjacents.push(adjacent.index);
 			}
 			// Find neighbors (exclude self)
-			let allNeighbors = this.grid.getNeighbors(pos).filter(neighbor => {
+			let allNeighbors = grid.getNeighbors(pos).filter(neighbor => {
 				return neighbor !== i
 			});
 			let fi = new Vector();
@@ -72,18 +72,20 @@ export default class ParticleCollisions {
 
 					// Derivative (jacobian)
 					// A = delta * I3
-					let A = DenseMatrix.identity(3, 3).timesReal(delta * this.k);
+					let A = DenseMatrix.identity(3, 3).timesReal(delta);
 
-					// B = vij * grad(||vij||)
+					// B = l0 * vij * vijT
 					let Vij = DenseMatrix.zeros(3, 1);
 					Vij.set(vij.x, 0, 0);
 					Vij.set(vij.y, 1, 0);
 					Vij.set(vij.z, 2, 0);
 					let VijT = Vij.transpose();
 					let B = Vij.timesDense(VijT);
-					B.scaleBy(lij * this.k);
+					B.scaleBy(l0);
 
+					// Dij = (ke/lij) * (A + B)
 					let Dij = A.plus(B);
+					Dij.scaleBy(this.k / lij);
 
 					const j = neighborIdx;
 

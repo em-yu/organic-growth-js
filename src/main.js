@@ -38,8 +38,8 @@ let sceneState = function() {
   // this.growScale = 0.05;
   this.collisionDetection = true;
   this.energyMin = true;
-  this.kb = 5.0;
-  this.ke = 100.0;
+  this.kb = 10.0;
+  this.ke = 150.0;
   this.implicit = true;
   this.chol = true;
   this.timeStep = 0.01;
@@ -55,7 +55,7 @@ let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'playGrowth');
 gui.add( params, 'wireframe' );
-gui.add( params, 'colorGrowth' );
+// gui.add( params, 'colorGrowth' );
 gui.add( params, 'exportOBJ' );
 
 if (process.env.NODE_ENV === 'development') {
