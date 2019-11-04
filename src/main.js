@@ -285,9 +285,10 @@ function integrateForces(X0, X) {
   if (!shells && !collisions)
     return;
 
-  const h2 = params.timeStep * params.timeStep;
   const m = 1;
   const nVertex = mesh.vertices.length;
+
+  let h = params.timeStep;
 
   for (let it = 0; it < params.nIter; it++) {
     // Compute bending forces
@@ -295,7 +296,7 @@ function integrateForces(X0, X) {
     let bendForce = bend ? bend.force : null;
     let bendDerivative = bend ? bend.derivative : null;
 
-    // if (bendForce) console.log(bendForce.norm(0));
+    const h2 = h * h;
 
     // Compute collision forces
     const repulse = collisions && it == 0 ? collisions.repulsiveForces(X) : null;
@@ -318,7 +319,7 @@ function integrateForces(X0, X) {
       A.incrementBy(repulseDerivative.timesReal(-h2/m));
       B.incrementBy(repulseForce);
     }
-    B.scaleBy(params.timeStep / m);
+    B.scaleBy(h / m);
 
     let dV;
 
@@ -342,7 +343,7 @@ function integrateForces(X0, X) {
       // vectors[i] = bendForce ? new Vector(bendForce.get(3 * i, 0), bendForce.get(3 * i + 1, 0), bendForce.get(3 * i + 2, 0)) : new Vector();
       let dVi = new Vector(dV.get(3 * i, 0), dV.get(3 * i + 1, 0), dV.get(3 * i + 2, 0));
       // console.log(dVi);
-      X[i].incrementBy(dVi.times(params.timeStep));
+      X[i].incrementBy(dVi.times(h));
     }		
 
   }

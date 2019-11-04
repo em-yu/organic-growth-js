@@ -64,7 +64,7 @@ export default class ParticleCollisions {
 				// Check if vj is adjacent
 				let l0 = this.resolution * 1.1;
 				if (adjacents.includes(neighborIdx)) {
-					l0 = this.resolution * 0.9;
+					l0 = this.resolution * 1.0;
 				}
 				let delta = lij - l0;
 				if (delta < 0) {
