@@ -73,8 +73,11 @@ export default class Scene {
 		this.scene.add( ambientLight );
 	}
 
-	updateGeometry(mesh, geometry, colors) {
-		for (let v of mesh.vertices) {
+	updateGeometry(sceneGeometry) {
+		const vertices = sceneGeometry.mesh.vertices;
+		const geometry = sceneGeometry.geometry;
+		const colors = sceneGeometry.colors;
+		for (let v of vertices) {
 			let i = v.index;
 			let position = geometry.positions[i];
 			this.bufferGeometry.attributes.position.setXYZ( i, position.x, position.y, position.z );
@@ -85,7 +88,7 @@ export default class Scene {
 
 			// Colors
 			let color;
-			if (colors) {
+			if (colors && colors[i]) {
 				color = colors[i];
 			}
 			else {

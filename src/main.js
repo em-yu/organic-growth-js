@@ -1,21 +1,18 @@
 import * as dat from 'dat.gui';
 
-import MeanCurvatureFlow from '../geometry-processing-js/node/projects/geometric-flow/mean-curvature-flow';
-
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
-import { Mesh } from '../geometry-processing-js/node/core/mesh';
 import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 import sparse from '../geometry-processing-js/node/linear-algebra/sparse-matrix';
 const SparseMatrix = sparse[0];
 import MemoryManager from '../geometry-processing-js/node/linear-algebra/emscripten-memory-manager';
 
-import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
+import smallDisk from './obj/small_disk.obj';
 
-import smallDisk from '../geometry-processing-js/input/small_disk.obj';
-
+import { planeGeometry } from './input';
+import { exportOBJ } from './output';
 import Scene from './scene';
+import SceneGeometry from './scene-geometry';
 import DiscreteShells from './discrete-shells';
 import ParticleCollisions from './particle-collisions';
 import EdgeBasedGrowth from './edge-based-growth';
@@ -45,17 +42,16 @@ let sceneState = function() {
   this.timeStep = 0.01;
   this.nIter = 2;
   this.wireframe = false;
-  this.edgeSize = 0.25;
   this.colorGrowth = true;
-  this.smoothMesh = function() { smoothMesh() };
-  this.exportOBJ = function() { exportOBJ() };
+  this.smoothMesh = function() { sceneGeometry.smoothMesh() };
+  this.exportOBJ = function() { exportOBJ(sceneGeometry) };
 };
 
 let params = new sceneState();
 const gui = new dat.GUI();
 gui.add( params, 'playGrowth');
 gui.add( params, 'wireframe' );
-// gui.add( params, 'colorGrowth' );
+gui.add( params, 'colorGrowth' );
 gui.add( params, 'exportOBJ' );
 
 if (process.env.NODE_ENV === 'development') {
@@ -72,150 +68,50 @@ if (process.env.NODE_ENV === 'development') {
   gui.add( params, 'timeStep' );
   gui.add( params, 'nIter' );
 
-  gui.add( params, 'edgeSize' );
-
   gui.add( params, 'smoothMesh' );
 
 }
 
-function exportOBJ() {
 
-  let positions = new Array(mesh.vertices.length * 3);
-  let normals = new Array(mesh.vertices.length * 3);
-
-  for (let v of mesh.vertices) {
-    let i = v.index;
-
-    let position = geometry.positions[v];
-    positions[3 * i + 0] = position.x;
-    positions[3 * i + 1] = position.y;
-    positions[3 * i + 2] = position.z;
-
-    let normal = geometry.vertexNormalEquallyWeighted(v);
-    normals[3 * i + 0] = normal.x;
-    normals[3 * i + 1] = normal.y;
-    normals[3 * i + 2] = normal.z;
-  }
-
-  let text = MeshIO.writeOBJ({
-    "v": positions,
-    "vt": undefined,
-    "vn": normals,
-    "f": geometry.indices
-  })
-
-  let element = document.createElement("a");
-  element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
-  element.setAttribute("download", "export.obj");
-
-  element.style.display = "none";
-  document.body.appendChild(element);
-
-  element.click();
-
-  document.body.removeChild(element);
-}
 
 // Init THREE.js scene
 const scene = new Scene(MAX_POINTS);
 scene.init();
 
-
-// Build mesh from polygon soup
+// Init geometry
 let polygonSoup = MeshIO.readOBJ(smallDisk);
-let mesh = new Mesh();
-mesh.build(polygonSoup);
-console.log(mesh);
+// let polygonSoup = planeGeometry(6, 3, 6, 3);
+const sceneGeometry = new SceneGeometry(MAX_POINTS);
+sceneGeometry.build(polygonSoup["f"], polygonSoup["v"], MAX_POINTS);
 
-// Create geometry object
-let geometry = new Geometry(mesh, polygonSoup["v"], MAX_POINTS);
 raiseEdge(0.1);
 
-scene.updateGeometry(mesh, geometry);
+let sources = sceneGeometry.setGrowthSources(5);
 
-// Colors
-let colors = new Array(MAX_POINTS);
+scene.updateGeometry(sceneGeometry);
 
 // Vectors
 let vectors = new Array(MAX_POINTS);
 
-// let sources = getGrowthSources(4);
-
-let growthProcess = new EdgeBasedGrowth(geometry, 1.2, 6.0, params.edgeSize * 2.0);
+let growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, 1.2, 0.5, sceneGeometry.edgeLength, sources);
 
 // Render scene
 animate();
 
 function raiseEdge(z) {
-  let boundaryFace = mesh.boundaries[0];
+  let boundaryFace = sceneGeometry.mesh.boundaries[0];
+  let X = sceneGeometry.getPositions();
   for (let v of boundaryFace.adjacentVertices()) {
     let up;
     if (z !== undefined)
       up = z;
     else
       up = Math.random() / 100;
-    geometry.positions[v.index].incrementBy(new Vector(0, 0, up));
+    X[v.index].incrementBy(new Vector(0, 0, up));
   }
 }
 
-function getGrowthSources(nb) {
-  let boundaryFace = mesh.boundaries[0];
-  let nV = 0;
-  for (let v of boundaryFace.adjacentVertices()) {
-    nV++;
-  }
-  let stride = Math.floor(nV / nb);
-  let sources = [];
-  let i = 0;
-  for (let v of boundaryFace.adjacentVertices()) {
-    if (i % stride === 0) {
-      sources.push(v.index);
-    }
-    i++;
-  }
-  return sources;
-}
 
-
-function balanceMesh() {
-
-  const nEdges0 = mesh.edges.length;
-
-  for (let i = 0; i < nEdges0; i++) {
-    const e = mesh.edges[i];
-    if (geometry.isFlippable(e)) {
-      geometry.flip(e);
-    }
-  }
-
-}
-
-function smoothMesh() {
-  for (let v of mesh.vertices) {
-    if (v.onBoundary())
-      continue;
-    let vPos = geometry.positions[v.index];
-    let barycenter = new Vector();
-    let n = 0;
-    for (let adjacent of v.adjacentVertices()) {
-      const aPos = geometry.positions[adjacent.index];
-      barycenter.incrementBy(aPos);
-      n++;
-    }
-    if (n > 0) {
-      barycenter.divideBy(n);
-      let smoothing = barycenter.minus(vPos);
-      let normal = geometry.vertexNormalAngleWeighted(v);
-      let sn = smoothing.dot(normal);
-      smoothing.decrementBy(normal.times(sn));
-      smoothing.scaleBy(0.1);
-
-      // Move vertex to tangential barycenter of neighbors
-      geometry.positions[v.index].incrementBy(smoothing);
-    }
-  }
-  scene.updateGeometry(mesh, geometry, colors);
-}
 
 function growSteps() {
   for (let i = 0; i < params.nSteps; i++) {
@@ -223,52 +119,38 @@ function growSteps() {
   }
 }
 
-function meanCurvSmooth() {
-  let meanCurvatureFlow = new MeanCurvatureFlow(geometry);
-  let h = 0.001;
-  meanCurvatureFlow.integrate(h);
-  scene.updateGeometry(mesh, geometry, colors);
-}
-
 function grow() {
   // raiseEdge();
   growthProcess.growEdges();
 
+  // Update colors based on growth factors
+  if (params.colorGrowth)
+    sceneGeometry.setColors(growthProcess.growthFactors, 0, 1);
+  else
+    sceneGeometry.setColors();
+
   // Store positions before energy minimization
-  const positions0 = {};
-  for (let v of mesh.vertices) {
-    let pos0 = new Vector(
-                geometry.positions[v.index].x,
-                geometry.positions[v.index].y,
-                geometry.positions[v.index].z
-                )
-    positions0[v.index] = pos0;
+  const positions0 = sceneGeometry.getPositionsCopy();
+  const positions = sceneGeometry.getPositions();
 
-    if (params.colorGrowth) {
-      // Compute new vertex colors based on growth factors
-      colors[v.index] = colormap(growthProcess.growthFactors.get(v.index, 0), 0, 1, coolwarm);
-    }
-  }
-
-  balanceMesh();
+  sceneGeometry.balanceMesh();
 
 
-  integrateForces(positions0, geometry.positions);
-  smoothMesh();
-  scene.updateGeometry(mesh, geometry, colors);
+  integrateForces(positions0, positions, sceneGeometry.mesh);
+  sceneGeometry.smoothMesh();
+  scene.updateGeometry(sceneGeometry);
   // scene.drawVectors(mesh, geometry, vectors);
 
   growCounter++;
   console.log("Grow step: " + growCounter);
-  console.log(mesh.vertices.length + " vertices")
+  console.log(sceneGeometry.nVertices() + " vertices")
 }
 
-function integrateForces(X0, X) {
+function integrateForces(X0, X, mesh) {
   let shells, collisions;
   if (params.energyMin) {
     shells = new DiscreteShells(
       X0,
-      // X,
       mesh,
       params.kb,
       );
@@ -277,8 +159,7 @@ function integrateForces(X0, X) {
   if (params.collisionDetection) {
     collisions = new ParticleCollisions(
       mesh,
-      // X,
-      params.edgeSize,
+      sceneGeometry.edgeLength * 0.5,
       params.ke);
   }
 
