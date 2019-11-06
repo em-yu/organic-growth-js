@@ -4,8 +4,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 
 const DEFAULT = new Vector(1.0, 0.3, 0.3);
+const EDGE_COLOR = new Vector(1.0, 1.0, 1.0);
 
-export default class Scene {
+export default class Renderer {
 	constructor(MAX_POINTS) {
 		this.bufferGeometry = undefined;
 		this.renderer = undefined;
@@ -65,12 +66,16 @@ export default class Scene {
 		this.scene.add(this.renderedMesh);
 
 		// Lights
-		let pointLight = new THREE.PointLight( 0xfff9ed, 1, 100 );
+		let pointLight = new THREE.PointLight( 0xfff9ed, 0.8, 100 );
 		pointLight.position.set( 20, 40, 20 );
 		this.scene.add( pointLight );
 
 		let ambientLight = new THREE.AmbientLight( 0xe8e8e8 ); // soft white light
 		this.scene.add( ambientLight );
+	}
+
+	clearScene() {
+		// this.bufferGeometry.clearGroups();
 	}
 
 	updateGeometry(sceneGeometry) {
@@ -92,7 +97,10 @@ export default class Scene {
 				color = colors[i];
 			}
 			else {
-				color = DEFAULT;
+				if (v.onBoundary())
+					color = EDGE_COLOR;
+				else
+					color = DEFAULT;
 			}
 			this.bufferGeometry.attributes.color.setXYZ(i, color.x, color.y, color.z);
 		};

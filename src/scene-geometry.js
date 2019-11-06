@@ -79,9 +79,7 @@ export default class SceneGeometry {
 		for (let v of boundaryFace.adjacentVertices()) {
 			nV++;
 		}
-		console.log(nV);
 		let stride = Math.ceil(nV / nb);
-		console.log(stride);
 		let sources = [];
 		let i = 0;
 		for (let v of boundaryFace.adjacentVertices()) {

@@ -33,6 +33,9 @@ export default class ParticleCollisions {
 		// Build grid
 		const grid = this.fillGrid(Xi);
 
+		// Rest edge length
+		const le = this.resolution;
+
 		let nVertex = this.mesh.vertices.length;
 		// let repulsiveForce = new Array(this.mesh.vertices.length);
 		// let repulsiveForce = DenseMatrix.zeros(1, nVertex * 3); // row vector
@@ -56,15 +59,15 @@ export default class ParticleCollisions {
 				const npos = Xi[neighborIdx];
 				let vij = npos.minus(pos);
 				let lij = vij.norm();
-				if (lij > this.resolution * 1.1)
+				if (lij > le * 1.0)
 					continue;
 				
 				vij.divideBy(lij);
 
 				// Check if vj is adjacent
-				let l0 = this.resolution * 1.1;
+				let l0 = le * 1.0;
 				if (adjacents.includes(neighborIdx)) {
-					l0 = this.resolution * 1.0;
+					l0 = le * 0.8;
 				}
 				let delta = lij - l0;
 				if (delta < 0) {

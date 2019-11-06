@@ -2,17 +2,16 @@ import HeatMethod from '../geometry-processing-js/node/projects/geodesic-distanc
 import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
 
 export default class EdgeBasedGrowth {
-	constructor(geometry, growthScale, growthFade, edgeThreshold, sources) {
+	constructor(geometry, edgeThreshold, sources) {
 		this.geometry = geometry;
-		this.growthScale = growthScale;
 		this.mesh = geometry.mesh;
-		this.growthFade = growthFade;
 		this.edgeThreshold = edgeThreshold;
 		this.sources = sources;
-		this.growthFactors = this.computeGrowthFactors();
+		this.growthFactors = undefined;
+
 	}
 
-	computeGrowthFactors() {
+	computeGrowthFactors(growthFade, growthZone) {
 		// initialize geodesics in heat
 		let V = this.mesh.vertices.length;
 		// Vector containing sources
@@ -56,11 +55,30 @@ export default class EdgeBasedGrowth {
 
 		let max = DenseMatrix.constant(maxDist, V, 1);
 		// Growth factor (between 0 and 1, max closer to the growth zone)
-		return max.minus(distanceToSource).timesReal(1 / maxDist);
+		let growthFactor = max.minus(distanceToSource).timesReal(1 / maxDist);
+
+		// Apply growth fade exponent
+		for (let i = 0; i < distanceToSource.nRows(); i++) {
+			// let factor = Math.pow(growthFactor.get(i, 0), growthFade);
+			let factor = this.smoothStep(growthFactor.get(i, 0), growthFade, growthZone);
+			growthFactor.set( factor, i, 0);
+		}
+
+		return growthFactor;
 	}
 
-	growEdges() {
-		let vertexGrowthFactors = this.growthFactors;
+	smoothStep(x, s, p) {
+		const c = 2 / (1-s) - 1;
+		if (x <= p) {
+			return Math.pow(x/p, c) * p;
+		}
+		else {
+			return 1 - Math.pow((1-x)/(1-p), c) * (1-p);
+		}
+	}
+
+	growEdges(growthScale, growthFade, growthZone) {
+		let vertexGrowthFactors = this.growthFactors || this.computeGrowthFactors(growthFade, growthZone);
 
 		let toSplit = [];
 		for (let i = 0; i < this.mesh.edges.length; i++) {
@@ -72,10 +90,9 @@ export default class EdgeBasedGrowth {
 			let phiB = vertexGrowthFactors.get(vB.index, 0);
 
 			let phi = Math.max(phiA, phiB);
-
 			let newEdgeLength = edgeLength
-													* (1 + Math.pow(phi, this.growthFade))
-													* this.growthScale;
+													* (1 + phi)
+													* growthScale;
 			if (newEdgeLength > this.edgeThreshold) {
 				toSplit.push(e);
 			}
@@ -86,10 +103,9 @@ export default class EdgeBasedGrowth {
 		}
 
 		// Update growth factors
-		this.growthFactors = this.computeGrowthFactors();
+		this.growthFactors = this.computeGrowthFactors(growthFade, growthZone);
 
 	}
-
 
 
 }
