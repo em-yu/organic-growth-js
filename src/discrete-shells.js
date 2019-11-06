@@ -63,9 +63,6 @@ export default class DiscreteShells {
 		// - derivative of hinge energy function
 		for (let i = 0; i < nEdge; i++) {
 			const e = this.mesh.edges[i];
-	
-			const fai = e.halfedge.face.index;
-			const fbi = e.halfedge.twin.face.index;
 			
 			// Undeformed state
 			let v0 = this.vector(e.halfedge, this.X0);
@@ -78,6 +75,9 @@ export default class DiscreteShells {
 			v.divideBy(l);
 
 			if (!e.onBoundary()) {
+				const fai = e.halfedge.face.index;
+				const fbi = e.halfedge.twin.face.index;
+
 				let theta0 = this.dihedralAngle(e.halfedge, v0, faceNormals0[fai], faceNormals0[fbi]);
 				let theta = this.dihedralAngle(e.halfedge, v, faceNormals[fai], faceNormals[fbi]);
 
@@ -112,15 +112,15 @@ export default class DiscreteShells {
 				// Hinge gradient for outgoing edge wrt vi
 				// he is the halfedge pointing towards x0
 				// v0 is the vector corresponding to he
-				let he = ohe.twin; // ingoing halfedge
-				let e = he.edge;
-				// let vhe = edgeVectors[e.index];
-				let vhe = this.vector(he, Xi);
-				vhe.normalize();
-
+				// let he = ohe.twin; // ingoing halfedge
+				let e = ohe.edge;
+				// let vhe = edgeVectors[e.index].times(this.orientation(he));
 				let n1;
 				let alt1;
 				if (!e.onBoundary()) {
+
+					let he = ohe.twin; // ingoing halfedge
+					let vhe = edgeVectors[e.index].times(this.orientation(he));
 
 					// Cosine of alpha1
 					let he1 = he.twin.next;
@@ -155,9 +155,9 @@ export default class DiscreteShells {
 					grad.incrementBy(angleGrad.times(d2Psi));
 				}
 				else {
-					if (!he.onBoundary) {
-						const f1 = he.face;
-						const he1 = he.next;
+					if (!ohe.onBoundary) {
+						const f1 = ohe.face;
+						const he1 = ohe.next;
 						// Altitude
 						alt1 = faceAreas[f1.index] * 2 / edgeLengths[he1.edge.index];
 			
@@ -169,10 +169,10 @@ export default class DiscreteShells {
 				// Hinge gradient for opposite edge wrt vi
 				let eOpp;
 				if (!e.onBoundary())
-					eOpp = he.twin.next.edge;
+					eOpp = ohe.next.edge;
 				else {
-					if (!he.onBoundary) {
-						eOpp = he.next.edge;
+					if (!ohe.onBoundary) {
+						eOpp = ohe.next.edge;
 					}
 				}
 				if (eOpp && !eOpp.onBoundary()) {
