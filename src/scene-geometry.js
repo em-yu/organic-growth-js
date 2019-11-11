@@ -2,6 +2,7 @@ import { Mesh } from '../geometry-processing-js/node/core/mesh';
 import { Geometry } from '../geometry-processing-js/node/core/geometry';
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
+import MeanCurvatureFlow from '../geometry-processing-js/node/projects/geometric-flow/mean-curvature-flow';
 
 export default class SceneGeometry {
 	constructor() {
@@ -101,7 +102,8 @@ export default class SceneGeometry {
 		}
 	}
 	
-	smoothMesh() {
+	smoothMesh(smoothness) {
+		let scale = smoothness || 0.1;
 		for (let v of this.mesh.vertices) {
 			if (v.onBoundary())
 				continue;
@@ -116,10 +118,10 @@ export default class SceneGeometry {
 			if (n > 0) {
 				barycenter.divideBy(n);
 				let smoothing = barycenter.minus(vPos);
-				let normal = this.geometry.vertexNormalAngleWeighted(v);
-				let sn = smoothing.dot(normal);
-				smoothing.decrementBy(normal.times(sn));
-				smoothing.scaleBy(0.1);
+				// let normal = this.geometry.vertexNormalAngleWeighted(v);
+				// let sn = smoothing.dot(normal);
+				// smoothing.decrementBy(normal.times(sn));
+				smoothing.scaleBy(scale);
 	
 				// Move vertex to tangential barycenter of neighbors
 				this.geometry.positions[v.index].incrementBy(smoothing);
