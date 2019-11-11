@@ -13,7 +13,6 @@ import { planeGeometry } from './input';
 import { exportOBJ } from './output';
 import Renderer from './renderer';
 import SceneGeometry from './scene-geometry';
-import DiscreteShells from './discrete-shells';
 import ParticleCollisions from './particle-collisions';
 import EdgeBasedGrowth from './edge-based-growth';
 
@@ -37,16 +36,24 @@ let sceneState = function() {
   this.growthFade = 0.5;
   this.growthZone = 0.5;
   this.collisionDetection = true;
-  this.energyMin = true;
+  this.energyMin = false;
   this.kb = 15.0;
   this.ke = 30.0;
-  this.implicit = true;
+  this.smooth = true;
+  // this.smoothness = 0.003;
+  this.smoothness = 0.5;
+  this.implicit = false;
   this.chol = true;
-  this.timeStep = 0.01;
-  this.nIter = 2;
+  this.timeStep = 0.02;
+  this.nIter = 1;
   this.wireframe = false;
   this.colorGrowth = true;
   this.smoothMesh = function() { sceneGeometry.smoothMesh() };
+  this.meanCurvSmooth = function() {
+    sceneGeometry.smoothMesh(params.smoothness);
+    // sceneGeometry.meanCurvSmooth(params.smoothness);
+    renderer.updateGeometry(sceneGeometry);
+  };
   this.inputMesh = 'disk';
   this.exportOBJ = function() { exportOBJ(sceneGeometry) };
 };
@@ -70,8 +77,11 @@ let growthZoneCtrl = growParamsFolder.add( params, 'growthZone', 0.1, 0.9);
 growParamsFolder.open();
 
 let materialFolder = gui.addFolder('Material parameters');
-materialFolder.add( params, 'kb', 5, 25);
+// materialFolder.add( params, 'kb', 5, 25);
 materialFolder.add( params, 'ke', 20, 60);
+// materialFolder.add( params, 'smoothness', 0.001, 0.01);
+materialFolder.add( params, 'smoothness', 0.2, 1.0);
+materialFolder.add( params, 'smooth');
 
 materialFolder.open();
 
@@ -133,7 +143,8 @@ function onGrowthParamsChange() {
 //   // gui.add( params, 'growScale' );
 //   gui.add( params, 'collisionDetection' );
 //   gui.add( params, 'energyMin' );
-//   gui.add( params, 'implicit' );
+  gui.add( params, 'implicit' );
+  gui.add( params, 'meanCurvSmooth' );
 //   gui.add( params, 'chol' );
 //   gui.add( params, 'timeStep' );
 //   gui.add( params, 'nIter' );
@@ -214,12 +225,10 @@ function grow() {
   const positions = sceneGeometry.getPositions();
 
   sceneGeometry.balanceMesh();
-
-
   integrateForces(positions0, positions, sceneGeometry.mesh);
-  sceneGeometry.smoothMesh();
+  if (params.smooth)
+    sceneGeometry.smoothMesh(params.smoothness);
   renderer.updateGeometry(sceneGeometry);
-  // scene.drawVectors(mesh, geometry, vectors);
 
   growCounter++;
   console.log("Grow step: " + growCounter);
@@ -227,23 +236,11 @@ function grow() {
 }
 
 function integrateForces(X0, X, mesh) {
-  let shells, collisions;
-  if (params.energyMin) {
-    shells = new DiscreteShells(
-      X0,
-      mesh,
-      params.kb,
-      );
-  }
-  if (params.collisionDetection) {
-    collisions = new ParticleCollisions(
+
+  let collisions = new ParticleCollisions(
       mesh,
       sceneGeometry.edgeLength,
       params.ke / sceneGeometry.edgeLength);
-  }
-
-  if (!shells && !collisions)
-    return;
 
   const m = 1;
   const nVertex = mesh.vertices.length;
@@ -251,15 +248,11 @@ function integrateForces(X0, X, mesh) {
   let h = params.timeStep;
 
   for (let it = 0; it < params.nIter; it++) {
-    // Compute bending forces
-    const bend = shells && it > 0 ? shells.bendingForces(X) : null;
-    let bendForce = bend ? bend.force : null;
-    let bendDerivative = bend ? bend.derivative : null;
 
     const h2 = h * h;
 
     // Compute collision forces
-    const repulse = collisions && it == 0 ? collisions.repulsiveForces(X) : null;
+    const repulse = collisions ? collisions.repulsiveForces(X) : null;
     let repulseForce = repulse ? repulse.force : null;
     let repulseDerivative = repulse ? repulse.derivative : null;
 
@@ -271,14 +264,9 @@ function integrateForces(X0, X, mesh) {
     // Build right hand side of the equation
     let B = DenseMatrix.zeros(nVertex * 3, 1);
 
-    if (bend) {
-      A.incrementBy(bendDerivative.timesReal(-h2/m));
-      B.incrementBy(bendForce);
-    }
-    if (repulse) {
-      A.incrementBy(repulseDerivative.timesReal(-h2/m));
-      B.incrementBy(repulseForce);
-    }
+    A.incrementBy(repulseDerivative.timesReal(-h2/m));
+    B.incrementBy(repulseForce);
+    
     B.scaleBy(h / m);
 
     let dV;
