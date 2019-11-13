@@ -24,7 +24,8 @@ export default class Renderer {
 		document.body.appendChild(canvas);
 
 		this.renderer = new THREE.WebGLRenderer({
-			canvas
+			canvas,
+			antialias: true
 		});
 
 		this.scene = new THREE.Scene();
