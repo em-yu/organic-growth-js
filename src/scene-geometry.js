@@ -105,12 +105,13 @@ export default class SceneGeometry {
 	smoothMesh(smoothness) {
 		let scale = smoothness || 0.1;
 		for (let v of this.mesh.vertices) {
-			if (v.onBoundary())
-				continue;
+			const onBoundary = v.onBoundary();
 			let vPos = this.geometry.positions[v.index];
 			let barycenter = new Vector();
 			let n = 0;
 			for (let adjacent of v.adjacentVertices()) {
+				if (onBoundary && !adjacent.onBoundary()) // for boundary vertices: only other boundary vertices count
+					continue;
 				const aPos = this.geometry.positions[adjacent.index];
 				barycenter.incrementBy(aPos);
 				n++;
@@ -118,9 +119,10 @@ export default class SceneGeometry {
 			if (n > 0) {
 				barycenter.divideBy(n);
 				let smoothing = barycenter.minus(vPos);
-				// let normal = this.geometry.vertexNormalAngleWeighted(v);
-				// let sn = smoothing.dot(normal);
-				// smoothing.decrementBy(normal.times(sn));
+				if (onBoundary) {
+					// Smooth less
+					smoothing.scaleBy(0.1);
+				}
 				smoothing.scaleBy(scale);
 	
 				// Move vertex to tangential barycenter of neighbors
