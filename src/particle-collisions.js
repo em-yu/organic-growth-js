@@ -7,11 +7,12 @@ const Triplet = sparse[1];
 import Grid from './grid';
 
 export default class ParticleCollisions {
-	constructor(mesh, resolution, k) {
+	constructor(mesh, edgeLength, k, coef) {
 		this.mesh = mesh;
-		this.resolution = resolution;
+		this.resolution = edgeLength;
 		this.grid = undefined;
-		this.k = k;
+		this.k = k / edgeLength;
+		this.le = edgeLength * coef;
 	}
 
 	/**
@@ -34,7 +35,7 @@ export default class ParticleCollisions {
 		const grid = this.fillGrid(Xi);
 
 		// Rest edge length
-		const le = this.resolution;
+
 
 		let nVertex = this.mesh.vertices.length;
 		// let repulsiveForce = new Array(this.mesh.vertices.length);
@@ -59,15 +60,15 @@ export default class ParticleCollisions {
 				const npos = Xi[neighborIdx];
 				let vij = npos.minus(pos);
 				let lij = vij.norm();
-				if (lij > le * 1.0)
+				if (lij > this.resolution * 1.0)
 					continue;
 				
 				vij.divideBy(lij);
 
 				// Check if vj is adjacent
-				let l0 = le * 1.0;
+				let l0 = this.le;
 				if (adjacents.includes(neighborIdx)) {
-					l0 = le * 0.8;
+					l0 = this.resolution * 0.8;
 				}
 				let delta = lij - l0;
 				if (delta < 0) {

@@ -39,6 +39,7 @@ let sceneState = function() {
   this.energyMin = false;
   this.kb = 15.0;
   this.ke = 30.0;
+  this.repulseCoef = 1.0;
   this.smooth = true;
   // this.smoothness = 0.003;
   this.smoothness = 0.5;
@@ -50,8 +51,8 @@ let sceneState = function() {
   this.colorGrowth = true;
   this.smoothMesh = function() { sceneGeometry.smoothMesh() };
   this.meanCurvSmooth = function() {
-    sceneGeometry.smoothMesh(params.smoothness);
-    // sceneGeometry.meanCurvSmooth(params.smoothness);
+    // sceneGeometry.smoothMesh(params.smoothness);
+    sceneGeometry.meanCurvSmooth(params.smoothness);
     renderer.updateGeometry(sceneGeometry);
   };
   this.inputMesh = 'disk';
@@ -78,10 +79,11 @@ growParamsFolder.open();
 
 let materialFolder = gui.addFolder('Material parameters');
 // materialFolder.add( params, 'kb', 5, 25);
-materialFolder.add( params, 'ke', 20, 60);
+// materialFolder.add( params, 'ke', 20, 60);
 // materialFolder.add( params, 'smoothness', 0.001, 0.01);
-materialFolder.add( params, 'smoothness', 0.2, 1.0);
-materialFolder.add( params, 'smooth');
+materialFolder.add( params, 'smoothness', 0, 1.0);
+materialFolder.add( params, 'repulseCoef', 0.2, 2.0);
+// materialFolder.add( params, 'smooth');
 
 materialFolder.open();
 
@@ -143,8 +145,8 @@ function onGrowthParamsChange() {
 //   // gui.add( params, 'growScale' );
 //   gui.add( params, 'collisionDetection' );
 //   gui.add( params, 'energyMin' );
-  gui.add( params, 'implicit' );
-  gui.add( params, 'meanCurvSmooth' );
+  // gui.add( params, 'implicit' );
+  // gui.add( params, 'meanCurvSmooth' );
 //   gui.add( params, 'chol' );
 //   gui.add( params, 'timeStep' );
 //   gui.add( params, 'nIter' );
@@ -221,11 +223,10 @@ function grow() {
     sceneGeometry.setColors();
 
   // Store positions before energy minimization
-  const positions0 = sceneGeometry.getPositionsCopy();
   const positions = sceneGeometry.getPositions();
 
   sceneGeometry.balanceMesh();
-  integrateForces(positions0, positions, sceneGeometry.mesh);
+  integrateForces(positions, sceneGeometry.mesh);
   if (params.smooth)
     sceneGeometry.smoothMesh(params.smoothness);
   renderer.updateGeometry(sceneGeometry);
@@ -235,12 +236,13 @@ function grow() {
   console.log(sceneGeometry.nVertices() + " vertices")
 }
 
-function integrateForces(X0, X, mesh) {
+function integrateForces(X, mesh) {
 
   let collisions = new ParticleCollisions(
       mesh,
       sceneGeometry.edgeLength,
-      params.ke / sceneGeometry.edgeLength);
+      params.ke,
+      params.repulseCoef);
 
   const m = 1;
   const nVertex = mesh.vertices.length;
