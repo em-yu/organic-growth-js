@@ -184,9 +184,6 @@ let sources = sceneGeometry.setGrowthSources(3);
 
 renderer.updateGeometry(sceneGeometry);
 
-// Vectors
-let vectors = new Array(MAX_POINTS);
-
 let growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * 2);
 
 let collisions = new ParticleCollisions(
@@ -202,12 +199,12 @@ let groundPlane = new RepulsivePlane(
 collisions.addRepulsiveSurface(groundPlane);
 growthProcess.addRepulsiveSurface(groundPlane);
 
-let verticalPlane = new RepulsivePlane(
-  new Vector(-1, 0, 0),
-  new Vector(0.3, 0, 0)
-);
-collisions.addRepulsiveSurface(verticalPlane);
-growthProcess.addRepulsiveSurface(verticalPlane);
+// let verticalPlane = new RepulsivePlane(
+//   new Vector(-1, 0, 0),
+//   new Vector(1.0, 0, 0)
+// );
+// collisions.addRepulsiveSurface(verticalPlane);
+// growthProcess.addRepulsiveSurface(verticalPlane);
 
 // Render scene
 animate();
@@ -268,42 +265,10 @@ function integrateForces(X, mesh) {
 
   for (let it = 0; it < params.nIter; it++) {
 
-    const h2 = h * h;
-
     // Compute collision forces
-    const repulse = collisions ? collisions.repulsiveForces(X) : null;
-    let repulseForce = repulse ? repulse.force : null;
-    let repulseDerivative = repulse ? repulse.derivative : null;
+    let repulseForce = collisions.repulsiveForces(X);
 
-    // Implicit Euler
-    // Solve for dV : (I - (h2/m) * forceDerivatives) * dV = (h/m) * forces
-    // Build left hand matrix of the equation 
-    let A = SparseMatrix.identity(nVertex * 3, nVertex * 3);
-
-    // Build right hand side of the equation
-    let B = DenseMatrix.zeros(nVertex * 3, 1);
-
-    A.incrementBy(repulseDerivative.timesReal(-h2/m));
-    B.incrementBy(repulseForce);
-    
-    B.scaleBy(h / m);
-
-    let dV;
-
-    if (params.implicit) {
-      // Solve
-      if (params.chol) {
-        let llt = A.chol();
-        dV = llt.solvePositiveDefinite(B);
-      }
-      else {
-        let qr = A.qr();
-        dV = qr.solve(B);
-      }
-    }
-    else {
-      dV = B;
-    }
+    let dV = repulseForce.timesReal(h / m);
 
     // Update positions
     for (let i = 0; i < nVertex; i++) {
