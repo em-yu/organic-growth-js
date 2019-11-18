@@ -15,6 +15,7 @@ import Renderer from './renderer';
 import SceneGeometry from './scene-geometry';
 import ParticleCollisions from './particle-collisions';
 import EdgeBasedGrowth from './edge-based-growth';
+import RepulsivePlane from './repulsive-plane';
 
 import './style.css';
 
@@ -188,6 +189,26 @@ let vectors = new Array(MAX_POINTS);
 
 let growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * 2);
 
+let collisions = new ParticleCollisions(
+  sceneGeometry.mesh,
+  sceneGeometry.edgeLength,
+  params.ke,
+  params.repulseCoef);
+
+let groundPlane = new RepulsivePlane(
+  new Vector(0, 0, 1),
+  new Vector(0, 0, -0.01)
+);
+collisions.addRepulsiveSurface(groundPlane);
+growthProcess.addRepulsiveSurface(groundPlane);
+
+let verticalPlane = new RepulsivePlane(
+  new Vector(-1, 0, 0),
+  new Vector(0.3, 0, 0)
+);
+collisions.addRepulsiveSurface(verticalPlane);
+growthProcess.addRepulsiveSurface(verticalPlane);
+
 // Render scene
 animate();
 
@@ -238,11 +259,7 @@ function grow() {
 
 function integrateForces(X, mesh) {
 
-  let collisions = new ParticleCollisions(
-      mesh,
-      sceneGeometry.edgeLength,
-      params.ke,
-      params.repulseCoef);
+
 
   const m = 1;
   const nVertex = mesh.vertices.length;

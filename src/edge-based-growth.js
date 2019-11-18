@@ -8,7 +8,20 @@ export default class EdgeBasedGrowth {
 		this.edgeThreshold = edgeThreshold;
 		this.sources = sources;
 		this.growthFactors = undefined;
+		this.repulsiveSurfaces = [];
+	}
 
+	addRepulsiveSurface(surface) {
+		this.repulsiveSurfaces.push(surface);
+	}
+
+	isColliding(x) {
+		for (let surf of this.repulsiveSurfaces) {
+			if (surf.isColliding(x)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	computeGrowthFactors(growthFade, growthZone) {
@@ -26,32 +39,25 @@ export default class EdgeBasedGrowth {
 		else {
 			// Add heat sources at boundary vertices
 			for (let v of boundaryFace.adjacentVertices()) {
-				delta.set(1, v.index, 0);
+				if (!this.isColliding(this.geometry.positions[v.index]))
+					delta.set(1, v.index, 0);
 			}
 		}
 		let heatMethod = new HeatMethod(this.geometry);
 	
 		let distanceToSource = heatMethod.compute(delta);
 
-		// Set distance at source to be zero (correct the approximation of HeatMethod)
-		if (this.sources !== undefined) {
-			for (let source of this.sources) {
-				distanceToSource.set(0, source, 0);
-			}
-		}
-		else {
-			let boundaryFace = this.mesh.boundaries[0];
-			// Add heat sources at boundary vertices
-			for (let v of boundaryFace.adjacentVertices()) {
-				distanceToSource.set(0, v.index, 0);
-			}
-		}
-
 		// From distance compute the growth factors
 		let maxDist = 0;
 		for (let i = 0; i < distanceToSource.nRows(); i++) {
 			maxDist = Math.max(distanceToSource.get(i, 0), maxDist);
 		};
+
+		for (let v of this.mesh.vertices) {
+			if (this.isColliding(this.geometry.positions[v.index])) {
+				distanceToSource.set(maxDist, v.index, 0);
+			}
+		}
 
 		let max = DenseMatrix.constant(maxDist, V, 1);
 		// Growth factor (between 0 and 1, max closer to the growth zone)

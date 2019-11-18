@@ -13,6 +13,11 @@ export default class ParticleCollisions {
 		this.grid = undefined;
 		this.k = k / edgeLength;
 		this.le = edgeLength * coef;
+		this.repulsiveSurfaces = [];
+	}
+
+	addRepulsiveSurface(surface) {
+		this.repulsiveSurfaces.push(surface);
 	}
 
 	/**
@@ -33,9 +38,6 @@ export default class ParticleCollisions {
 	repulsiveForces(Xi) {
 		// Build grid
 		const grid = this.fillGrid(Xi);
-
-		// Rest edge length
-
 
 		let nVertex = this.mesh.vertices.length;
 		// let repulsiveForce = new Array(this.mesh.vertices.length);
@@ -103,6 +105,12 @@ export default class ParticleCollisions {
 					
 					fi.incrementBy(fij);
 				}
+			}
+
+			// Repulsive surfaces
+			for (let surf of this.repulsiveSurfaces) {
+				let repulse = surf.repulse(pos);
+				fi.incrementBy(repulse);
 			}
 
 			// If non nul
