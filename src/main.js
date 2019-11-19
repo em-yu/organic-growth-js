@@ -134,7 +134,7 @@ function onGrowthParamsChange() {
     return;
   let factors = growthProcess.computeGrowthFactors(params.growthFade, 1 - params.growthZone);
   // Update colors based on growth factors
-  sceneGeometry.setColors(factors, 0.0, 1);
+  sceneGeometry.setColors(factors, -1, 1);
   renderer.updateGeometry(sceneGeometry);
 }
 
@@ -236,7 +236,7 @@ function grow() {
 
   // Update colors based on growth factors
   if (params.colorGrowth)
-    sceneGeometry.setColors(growthProcess.growthFactors, 0.0, 1);
+    sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
   else
     sceneGeometry.setColors();
 

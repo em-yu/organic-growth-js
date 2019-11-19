@@ -53,12 +53,6 @@ export default class EdgeBasedGrowth {
 			maxDist = Math.max(distanceToSource.get(i, 0), maxDist);
 		};
 
-		for (let v of this.mesh.vertices) {
-			if (this.isColliding(this.geometry.positions[v.index])) {
-				distanceToSource.set(maxDist, v.index, 0);
-			}
-		}
-
 		let max = DenseMatrix.constant(maxDist, V, 1);
 		// Growth factor (between 0 and 1, max closer to the growth zone)
 		let growthFactor = max.minus(distanceToSource).timesReal(1 / maxDist);

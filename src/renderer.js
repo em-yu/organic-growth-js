@@ -67,16 +67,12 @@ export default class Renderer {
 		this.scene.add(this.renderedMesh);
 
 		// Lights
-		let pointLight = new THREE.PointLight( 0xfff9ed, 0.8, 100 );
+		let pointLight = new THREE.PointLight( new THREE.Color("rgb(255, 230, 230)"), 1.0, 100 );
 		pointLight.position.set( 20, 40, 20 );
 		this.scene.add( pointLight );
 
-		let ambientLight = new THREE.AmbientLight( 0xe8e8e8 ); // soft white light
+		let ambientLight = new THREE.AmbientLight( new THREE.Color("rgb(179, 179, 179)") ); // soft white light
 		this.scene.add( ambientLight );
-	}
-
-	clearScene() {
-		// this.bufferGeometry.clearGroups();
 	}
 
 	updateGeometry(sceneGeometry) {
@@ -98,10 +94,10 @@ export default class Renderer {
 				color = colors[i];
 			}
 			else {
-				if (v.onBoundary())
-					color = EDGE_COLOR;
-				else
-					color = DEFAULT;
+				// if (v.onBoundary())
+				// 	color = EDGE_COLOR;
+				// else
+				color = DEFAULT;
 			}
 			this.bufferGeometry.attributes.color.setXYZ(i, color.x, color.y, color.z);
 		};
