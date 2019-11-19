@@ -1,3 +1,4 @@
 /node_modules
 /geometry-processing-js
 /dist
+public/bundle.*

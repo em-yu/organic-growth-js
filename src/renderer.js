@@ -129,7 +129,7 @@ export default class Renderer {
 		}
 	}
 
-	render(params) {
+	render(wireframeMode) {
 		if (this.resizeRendererToDisplaySize()) {
 			const canvas = this.renderer.domElement;
 			this.camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -139,7 +139,7 @@ export default class Renderer {
 		this.controls.update();
 		
 		// Set wireframe mode
-		this.renderedMesh.material.wireframe = params.wireframe;
+		this.renderedMesh.material.wireframe = wireframeMode;
 	
 		this.renderer.render(this.scene, this.camera);
 	

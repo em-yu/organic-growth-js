@@ -22,7 +22,6 @@ export default class SceneGeometry {
 
 		// Create geometry object
 		const geometry = new Geometry(mesh, positions, MAX_POINTS);
-		// raiseEdge(0.1);
 
 		// Get edge length
 		let edgeLength = 0;
@@ -37,6 +36,21 @@ export default class SceneGeometry {
 		this.mesh = mesh;
 		this.geometry = geometry;
 		this.edgeLength = edgeLength;
+
+		this.raiseEdge(0.1);
+	}
+
+	raiseEdge(z) {
+		let boundaryFace = this.mesh.boundaries[0];
+		let X = this.getPositions();
+		for (let v of boundaryFace.adjacentVertices()) {
+			let up;
+			if (z !== undefined)
+				up = z;
+			else
+				up = Math.random() / 100;
+			X[v.index].incrementBy(new Vector(0, 0, up));
+		}
 	}
 
 	getPositions() {
