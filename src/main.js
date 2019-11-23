@@ -1,5 +1,5 @@
 
-import App from './App.svelte';
+import App from './ui/App.svelte';
 
 const app = new App({
 	target: document.body,

@@ -49,6 +49,7 @@ export function init() {
 	// Initialise growth process
 	let sources = sceneGeometry.setGrowthSources(3);
 	growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * 2);
+	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
 
 	// Initialise collision detection
 	collisions = new ParticleCollisions(
@@ -67,12 +68,16 @@ export function init() {
 
 
 
-export function grow() {
+export function grow(params) {
+
 	if (!initialized)
 		return;
 
-  growthProcess.growEdges(GROWTH_SCALE, GROWTH_FADE, 1 - growthZone);
+	let { growthZone, smoothness, gravity } = params;
 
+	growthProcess.growEdges(GROWTH_SCALE);
+	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
+	
   // Update colors based on growth factors
   if (colorGrowth)
     sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
@@ -83,7 +88,7 @@ export function grow() {
   const positions = sceneGeometry.getPositions();
 
   sceneGeometry.balanceMesh();
-  integrateForces(positions, sceneGeometry.mesh);
+  integrateForces(positions, sceneGeometry.mesh, gravity);
 	sceneGeometry.smoothMesh(smoothness);
 
   growCounter++;
@@ -92,13 +97,16 @@ export function grow() {
 	return "Grow step: " + growCounter;
 }
 
-export function getGrowthFactors() {
+export function updateGrowthColors(params) {
 	if (!initialized)
 		return;
-	return growthProcess.computeGrowthFactors(GROWTH_FADE, 1 - growthZone);
+	let { growthZone } = params;
+	// Update growth factors because params changed
+	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
+	sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
 }
 
-function integrateForces(X, mesh) {
+function integrateForces(X, mesh, g_coeff) {
 
   const nVertex = mesh.vertices.length;
 

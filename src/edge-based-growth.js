@@ -67,6 +67,10 @@ export default class EdgeBasedGrowth {
 		return growthFactor;
 	}
 
+	updateGrowthFactors(growthFade, growthZone) {
+		this.growthFactors = this.computeGrowthFactors(growthFade, growthZone);
+	}
+
 	smoothStep(x, s, p) {
 		const c = 2 / (1-s) - 1;
 		if (x <= p) {
@@ -77,8 +81,8 @@ export default class EdgeBasedGrowth {
 		}
 	}
 
-	growEdges(growthScale, growthFade, growthZone) {
-		let vertexGrowthFactors = this.growthFactors || this.computeGrowthFactors(growthFade, growthZone);
+	growEdges(growthScale) {
+		let vertexGrowthFactors = this.growthFactors;
 
 		let toSplit = [];
 		for (let i = 0; i < this.mesh.edges.length; i++) {
@@ -101,9 +105,6 @@ export default class EdgeBasedGrowth {
 		for (let e of toSplit) {
 			this.geometry.split(e);
 		}
-
-		// Update growth factors
-		this.growthFactors = this.computeGrowthFactors(growthFade, growthZone);
 
 	}
 
