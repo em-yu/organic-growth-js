@@ -9,9 +9,10 @@ import Grid from './grid';
 export default class ParticleCollisions {
 	constructor(mesh, edgeLength, k, coef) {
 		this.mesh = mesh;
-		this.resolution = edgeLength;
+		this.resolution = Math.max(edgeLength, edgeLength * coef);
 		this.grid = undefined;
 		this.k = k / edgeLength;
+		this.le_adj = edgeLength;
 		this.le = edgeLength * coef;
 		this.repulsiveSurfaces = [];
 	}
@@ -40,10 +41,12 @@ export default class ParticleCollisions {
 		const grid = this.fillGrid(Xi);
 
 		let nVertex = this.mesh.vertices.length;
-		// let repulsiveForce = new Array(this.mesh.vertices.length);
-		// let repulsiveForce = DenseMatrix.zeros(1, nVertex * 3); // row vector
 		let repulsiveTriplet = new Triplet(1, 3 * nVertex);
 		for (let v of this.mesh.vertices) {
+			if (v.growthFactor < 0.5) {
+				// Fixed vertices
+				continue;
+			}
 			const pos = Xi[v.index];
 			const i = v.index;
 			// List of adjacent vertices index
@@ -60,7 +63,7 @@ export default class ParticleCollisions {
 				const npos = Xi[neighborIdx];
 				let vij = npos.minus(pos);
 				let lij = vij.norm();
-				if (lij > this.resolution * 1.0)
+				if (lij > this.resolution)
 					continue;
 				
 				vij.divideBy(lij);
@@ -68,7 +71,7 @@ export default class ParticleCollisions {
 				// Check if vj is adjacent
 				let l0 = this.le;
 				if (adjacents.includes(neighborIdx)) {
-					l0 = this.resolution * 0.8;
+					l0 = this.le_adj;
 				}
 				let delta = lij - l0;
 				if (delta < 0) {

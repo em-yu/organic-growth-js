@@ -58,10 +58,10 @@ export default class EdgeBasedGrowth {
 		let growthFactor = max.minus(distanceToSource).timesReal(1 / maxDist);
 
 		// Apply growth fade exponent
-		for (let i = 0; i < distanceToSource.nRows(); i++) {
-			// let factor = Math.pow(growthFactor.get(i, 0), growthFade);
+		for (let i = 0; i < V; i++) {
 			let factor = this.smoothStep(growthFactor.get(i, 0), growthFade, growthZone);
 			growthFactor.set( factor, i, 0);
+			this.mesh.vertices[i].growthFactor = factor;
 		}
 
 		return growthFactor;

@@ -11,9 +11,16 @@ import RepulsivePlane from './repulsive-plane';
 
 
 const MAX_POINTS = 100000;
-const Ke = 30;
-const REPULSE_COEFF = 1.0;
-const TIME_STEP = 0.02;
+
+// Stiffness (inter-cell repulsion)
+const Ke = 80;
+const REPULSE_COEFF = 1.0; // non-adjacent cells rest distance = edge length * REPULSE_COEFF
+
+const G = 100.0;
+const g_coeff = 1.0;
+
+const TIME_STEP = 0.01;
+
 const GROWTH_FADE = 0.5;
 const GROWTH_SCALE = 2.0;
 
@@ -50,12 +57,12 @@ export function init() {
 		Ke,
 		REPULSE_COEFF);
 
-	let groundPlane = new RepulsivePlane(
-		new Vector(0, 0, 1),
-		new Vector(0, 0, -0.01)
-	);
-	collisions.addRepulsiveSurface(groundPlane);
-	growthProcess.addRepulsiveSurface(groundPlane);
+	// let groundPlane = new RepulsivePlane(
+	// 	new Vector(0, 0, 1),
+	// 	new Vector(0, 0, -0.01)
+	// );
+	// collisions.addRepulsiveSurface(groundPlane);
+	// growthProcess.addRepulsiveSurface(groundPlane);
 }
 
 
@@ -70,7 +77,7 @@ export function grow() {
   if (colorGrowth)
     sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
   else
-    sceneGeometry.setColors();
+		sceneGeometry.setColors();
 
   // Store positions before energy minimization
   const positions = sceneGeometry.getPositions();
@@ -81,7 +88,8 @@ export function grow() {
 
   growCounter++;
   console.log("Grow step: " + growCounter);
-  console.log(sceneGeometry.nVertices() + " vertices")
+	console.log(sceneGeometry.nVertices() + " vertices")
+	return "Grow step: " + growCounter;
 }
 
 export function getGrowthFactors() {
@@ -92,20 +100,22 @@ export function getGrowthFactors() {
 
 function integrateForces(X, mesh) {
 
-  const m = 1;
   const nVertex = mesh.vertices.length;
 
 	// Compute collision forces
 	let repulseForce = collisions.repulsiveForces(X);
+	let dV = repulseForce.timesReal(TIME_STEP);
 
-	let dV = repulseForce.timesReal(TIME_STEP / m);
+	// Gravity
+	let dV_gravity = new Vector(0.0, 0.0, G * g_coeff);
+	dV_gravity.scaleBy(TIME_STEP);
 
 	// Update positions
 	for (let i = 0; i < nVertex; i++) {
-		// vectors[i] = bendForce ? new Vector(bendForce.get(3 * i, 0), bendForce.get(3 * i + 1, 0), bendForce.get(3 * i + 2, 0)) : new Vector();
 		let dVi = new Vector(dV.get(3 * i, 0), dV.get(3 * i + 1, 0), dV.get(3 * i + 2, 0));
-		// console.log(dVi);
-		X[i].incrementBy(dVi.times(TIME_STEP));
+		// Gravity
+		dVi.incrementBy( dV_gravity )
+		X[i].incrementBy(dVi.times(TIME_STEP * mesh.vertices[i].growthFactor));
 	}		
 
   MemoryManager.deleteExcept([growthProcess.growthFactors]);

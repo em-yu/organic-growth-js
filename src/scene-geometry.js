@@ -37,7 +37,7 @@ export default class SceneGeometry {
 		this.geometry = geometry;
 		this.edgeLength = edgeLength;
 
-		this.raiseEdge(0.1);
+		this.raiseEdge(0.01);
 	}
 
 	raiseEdge(z) {
@@ -137,7 +137,7 @@ export default class SceneGeometry {
 					// Smooth less
 					smoothing.scaleBy(0.1);
 				}
-				smoothing.scaleBy(scale);
+				smoothing.scaleBy(scale * v.growthFactor);
 	
 				// Move vertex to tangential barycenter of neighbors
 				this.geometry.positions[v.index].incrementBy(smoothing);
