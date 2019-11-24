@@ -15,6 +15,7 @@
 		justify-content: center;
     align-items: center;
     top: 0;
+		z-index: 10;
 	}
 
 	.confirm-popup {

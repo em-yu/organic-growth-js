@@ -4,37 +4,30 @@
 	const dispatch = createEventDispatcher();
 
 	function change() {
+		checked = !checked;
 		dispatch('change');
 	}
 
 	export let label;
-	export let value;
+	export let checked;
 </script>
 
 <style>
 	.container {
-		display: flex;
-		flex-direction: row;
-		align-items: baseline;
-    justify-content: space-between;
-	}
-
-	.label {
 		font-size: 0.8em;
+		text-decoration: line-through;
+		cursor: pointer;
+		user-select: none;
 	}
 
-	.checkbox {
-		margin: 0;
+
+	.checked {
+		text-decoration: none;
 	}
 </style>
 
-<div class="container">
-	<div class="label">
+<div class="container"
+		class:checked
+		on:click={change}>
 		{label}
-	</div>
-	<input type="checkbox"
-		class="checkbox"
-		bind:checked={value}
-		on:change={change}
-	/>
 </div>
