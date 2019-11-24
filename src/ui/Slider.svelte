@@ -4,7 +4,9 @@
 	const dispatch = createEventDispatcher();
 
 	function change() {
-		dispatch('change');
+		dispatch('change', {
+			value: value
+		});
 	}
 
 	export let value;
@@ -19,6 +21,7 @@
 		width: 100%;
 		height: 8px;
 		padding: 0;
+		margin: 0;
 		border-radius: 4px;   
 		background: #d3d3d3;
 		outline: none;

@@ -1,22 +1,29 @@
 <script>
-	import Parameter from './Parameter.svelte';
-	import Slider from './Slider.svelte';
-	import Checkbox from './Checkbox.svelte';
-	import Button from './Button.svelte';
+	import IconButton from './IconButton.svelte';
+	import Popup from './Popup.svelte';
+	import SimulationParams from './SimulationParams.svelte';
+	import SceneParams from './SceneParams.svelte';
+
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
-	function change(param) {
-		dispatch('change', {
-			updatedParam: param
-		});
+	function change(e) {
+		dispatch('change', e.detail);
+	}
+
+	function switchMode() {
+		sceneEditMode = !sceneEditMode;
+		resetHandler();
 	}
 
 	export let parameters = {};
 	export let exportModel;
+	export let resetHandler;
 	let step = 0.01;
 
+	export let sceneEditMode;
+	let showPopup = false;
 
 </script>
 
@@ -42,52 +49,65 @@
 		display: flex;
 		flex-direction: column;
 	}
+
+	.done-container {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.hint {
+		padding: 5px;
+		color: #DADADA;
+	}
+
+	.single-button {
+		width: 50px;
+		height: 50px;
+		padding: 0;
+	}
 </style>
 
 <div class="side-container">
-	<div class="controls">
-		<Parameter label="Smoothness">
-			<Slider
-				bind:value={parameters.smoothness}
-				min = "0.5" max = "1.0" {step}
-				on:change={() => change('smoothness')}
-			/>
-		</Parameter>
 
-		<Parameter label="Growth zone">
-			<Slider
-				bind:value={parameters.growthZone}
-				min = "0.1" max = "0.8" {step}
-				on:change={() => change('growthZone')}
-			/>
-		</Parameter>
+	{#if sceneEditMode}
+		<div class="done-container">
+			<div class="controls single-button">
+					<IconButton on:click={() => { switchMode() }}>
+						<i class="material-icons">done</i>
+					</IconButton>
+			</div>
+			<div class="hint">
+				Click here to start simulation
+			</div>
+		</div>
+	{:else}
+		<div class="controls single-button">
+			<IconButton on:click={() => { showPopup = true; }}>
+				<i class="material-icons">category</i>
+			</IconButton>
+		</div>
+	{/if}
 
-		<Parameter label="Gravity">
-			<Slider
-				bind:value={parameters.gravity}
-				min = "0.0" max = "10.0" {step}
-				on:change={() => change('gravity')}
-			/>
-		</Parameter>
-	</div>
+	{#if sceneEditMode}
+		<SceneParams 
+			bind:parameters={parameters}
+			on:change={change}
+		/>
+	{:else}
+		<SimulationParams
+			bind:parameters={parameters}
+			on:change={change}
+			exportModel={exportModel}
+		/>
+	{/if}
 
-	<div class="controls">
-		<Parameter label="Material">
-			<Checkbox
-				label="Wireframe"
-				bind:checked={parameters.wireframe}
-				on:change={() => change('wireframe')}
-			/>
-		</Parameter>
-	</div>
 
-	<div class="controls">
-		<Parameter label="Export 3D model">
-			<Button
-				on:click={exportModel}
-			>
-			Export to OBJ
-			</Button>
-		</Parameter>
-	</div>
 </div>
+
+{#if showPopup}
+	<Popup confirmHandler={() => { switchMode(); showPopup = false;}} cancelHandler={() => { showPopup = false; }}>
+		<h3>Go back to scene edit mode?</h3>
+		<p>By going back to scene edit mode, all current growth progress will be lost.</p>
+	</Popup>
+{/if}

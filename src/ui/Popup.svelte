@@ -33,7 +33,7 @@
 
 	.button {
 		font-weight: bold;
-		margin: 2px;
+		margin: 2px 5px;
 	}
 
 </style>

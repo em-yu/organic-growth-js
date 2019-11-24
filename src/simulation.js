@@ -11,8 +11,9 @@ import RepulsivePlane from './repulsive-plane';
 
 const MAX_POINTS = 100000;
 
+// MAGIC CONSTANTS
+
 // Stiffness (inter-cell repulsion)
-// const Ke = 10 * 10e-4;
 const Ke = 3.0;
 const REPULSE_COEFF = 1.0; // non-adjacent cells rest distance = edge length * REPULSE_COEFF
 
@@ -34,7 +35,7 @@ let initialized = false;
 
 export function init(params) {
 
-	let { growthZone, smoothness, gravity, colorGrowth } = params;
+	let { growthZone, colorGrowth } = params;
 
 	growCounter = 0;
 	initialized = true;

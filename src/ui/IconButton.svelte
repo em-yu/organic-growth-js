@@ -20,7 +20,8 @@
 		justify-content: center;
 		cursor: pointer;
 		border: none;
-		padding: 0 5px;
+		padding: 5px;
+		margin: 0;
 	}
 
 	button:hover {

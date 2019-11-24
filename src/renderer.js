@@ -6,6 +6,8 @@ import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 const DEFAULT = new Vector(1.0, 0.3, 0.3);
 const EDGE_COLOR = new Vector(1.0, 1.0, 1.0);
 
+let gravity_arrow;
+
 export default class Renderer {
 	constructor(MAX_POINTS) {
 		this.bufferGeometry = undefined;
@@ -113,6 +115,18 @@ export default class Renderer {
 		this.bufferGeometry.attributes.color.needsUpdate = true;
 		this.bufferGeometry.index.needsUpdate = true;
 		this.bufferGeometry.computeBoundingSphere();
+	}
+
+	drawGravityArrow(x, y, z) {
+		let dir = new THREE.Vector3(x, y, z);
+		var origin = new THREE.Vector3( 0, 0, 0 );
+		var length = dir.length() + 0.01;
+		gravity_arrow = new THREE.ArrowHelper( dir, origin, length, 0xffff00 );
+		this.scene.add( gravity_arrow );
+	}
+
+	removeGravityArrow() {
+		this.scene.remove( gravity_arrow );
 	}
 
 	drawVectors(mesh, geometry, vectors) {

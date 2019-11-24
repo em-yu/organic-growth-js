@@ -29,8 +29,7 @@ export default class EdgeBasedGrowth {
 		let V = this.mesh.vertices.length;
 		// Vector containing sources
 		let delta = DenseMatrix.zeros(V, 1);
-	
-		let boundaryFace = this.mesh.boundaries[0];
+
 		if (this.sources !== undefined) {
 			for (let source of this.sources) {
 				delta.set(1, source, 0);
@@ -38,11 +37,23 @@ export default class EdgeBasedGrowth {
 		}
 		else {
 			// Add heat sources at boundary vertices
-			for (let v of boundaryFace.adjacentVertices()) {
-				if (!this.isColliding(this.geometry.positions[v.index]))
-					delta.set(1, v.index, 0);
+			// for (let boundaryFace of this.mesh.boundaries) {
+					
+				let boundaryFace = this.mesh.boundaries[0];
+				// let nBoundary = 0;
+				// for (let v of boundaryFace.adjacentVertices()) {
+				// 	nBoundary++;
+				// }
+				// let i = 0;
+				for (let v of boundaryFace.adjacentVertices()) {
+					// if (i > nBoundary / 2)
+					// 	break;
+					if (!this.isColliding(this.geometry.positions[v.index]))
+						delta.set(1, v.index, 0);
+					// i++;
+				}
 			}
-		}
+		// }
 		let heatMethod = new HeatMethod(this.geometry);
 	
 		let distanceToSource = heatMethod.compute(delta);
