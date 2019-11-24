@@ -11,9 +11,10 @@
 	let parameters = {
 		smoothness: 0.75,
 		growthZone: 0.5,
-		gravity: 1.0,
+		gravity: 2.0,
 		colorGrowth: true,
 		wireframe: false,
+		model: "cylinder",
 	};
 
 	const MAX_POINTS = 100000; // Is defined twice (simulation.js)

@@ -11,7 +11,7 @@ export default class ParticleCollisions {
 		this.mesh = mesh;
 		this.resolution = Math.max(edgeLength, edgeLength * coef);
 		this.grid = undefined;
-		this.k = k / edgeLength;
+		this.k = k;
 		this.le_adj = edgeLength;
 		this.le = edgeLength * coef;
 		this.repulsiveSurfaces = [];

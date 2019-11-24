@@ -65,7 +65,7 @@
 		<Parameter label="Gravity">
 			<Slider
 				bind:value={parameters.gravity}
-				min = "0.0" max = "2.0" {step}
+				min = "0.0" max = "10.0" {step}
 				on:change={() => change('gravity')}
 			/>
 		</Parameter>
@@ -75,7 +75,7 @@
 		<Parameter label="Material">
 			<Checkbox
 				label="Wireframe"
-				bind:value={parameters.wireframe}
+				bind:checked={parameters.wireframe}
 				on:change={() => change('wireframe')}
 			/>
 		</Parameter>

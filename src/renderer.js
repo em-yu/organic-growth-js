@@ -33,7 +33,7 @@ export default class Renderer {
 		let aspect = canvas.clientWidth / canvas.clientHeight;
 		let near = 0.1;
 		let far = 100;
-		let eyeZ = 3.5;
+		let eyeZ = 10.0;
 
 		this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 		this.camera.position.z = eyeZ;

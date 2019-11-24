@@ -20,14 +20,13 @@ export default class SceneGeometry {
 			v: positions
 		});
 
-		// Create geometry object
-		const geometry = new Geometry(mesh, positions, MAX_POINTS);
+		// Create geometry object (center on origin and normalize edges to be unit lengths)
+		const geometry = new Geometry(mesh, positions, MAX_POINTS, false, true);
 
-		// Get edge length
+		// Get edge length (should be unit length)
 		let edgeLength = 0;
-		const v0 = mesh.vertices[0];
 		let n = 0;
-		for (let e of v0.adjacentEdges()) {
+		for (let e of mesh.edges) {
 			edgeLength += geometry.length(e);
 			n++;
 		}
@@ -36,8 +35,6 @@ export default class SceneGeometry {
 		this.mesh = mesh;
 		this.geometry = geometry;
 		this.edgeLength = edgeLength;
-
-		this.raiseEdge(0.01);
 	}
 
 	raiseEdge(z) {
@@ -50,6 +47,16 @@ export default class SceneGeometry {
 			else
 				up = Math.random() / 100;
 			X[v.index].incrementBy(new Vector(0, 0, up));
+		}
+	}
+
+	stretchEdge(r) {
+		let boundaryFace = this.mesh.boundaries[0];
+		let X = this.getPositions();
+		for (let v of boundaryFace.adjacentVertices()) {
+			let radial = new Vector(X[v.index].x, X[v.index].y, X[v.index].z);
+			radial.normalize();
+			X[v.index].incrementBy(radial.times(r));
 		}
 	}
 
