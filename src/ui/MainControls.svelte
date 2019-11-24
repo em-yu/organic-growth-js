@@ -1,7 +1,7 @@
 <script>
 
 	import Popup from './Popup.svelte';
-	import Button from './Button.svelte';
+	import IconButton from './IconButton.svelte';
 
 	export let stepHandler;
 	export let resetHandler;
@@ -44,21 +44,21 @@
 
 <div class="bottom-container">
 	<div class="main-controls">
-		<Button on:click={() => { showPopup = true; }}>
+		<IconButton on:click={() => { showPopup = true; }}>
 			<i class="material-icons">replay</i>
-		</Button>
+		</IconButton>
 
-		<Button on:click={() => { playGrowth = !playGrowth; }}>
+		<IconButton on:click={() => { playGrowth = !playGrowth; }}>
 			{#if playGrowth}
 				<i class="material-icons play-pause">pause_circle_outline</i>
 			{:else}
 				<i class="material-icons play-pause">play_circle_outline</i>
 			{/if}
-		</Button>
+		</IconButton>
 
-		<Button on:click={stepHandler}>
+		<IconButton on:click={stepHandler}>
 			<i class="material-icons">skip_next</i>
-		</Button>
+		</IconButton>
 
 	</div>
 </div>

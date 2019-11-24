@@ -13,12 +13,14 @@
 	button {
 		color: inherit;
 		background: transparent;
-		font-size: 0.8em;
+		font-weight: inherit;
+		height: 100%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		border: solid 1px #DADADA;
+		border: none;
+		padding: 0 5px;
 	}
 
 	button:hover {

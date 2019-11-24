@@ -5,6 +5,7 @@
 
 	import Renderer from '../renderer.js';
 	import { sceneGeometry, grow, init as simInit, updateGrowthColors } from '../simulation.js';
+	import { exportOBJ } from '../output.js';
 
 	let logs = "";
 	let parameters = {
@@ -45,7 +46,7 @@
 	}
 
 	function init() {
-		simInit();
+		simInit(parameters);
 		renderer.updateGeometry(sceneGeometry);
 	}
 
@@ -61,12 +62,16 @@
 		renderer.updateGeometry(sceneGeometry);
 	}
 
+	function exportModel() {
+		exportOBJ(sceneGeometry);
+	}
+
 
 </script>
 
 <MainControls bind:playGrowth={playGrowth} stepHandler={growthStep} resetHandler={init}/>
 
-<SideControls bind:parameters={parameters} on:change={updateParameters} />
+<SideControls bind:parameters={parameters} on:change={updateParameters} exportModel={exportModel} />
 
 <Logger>
 	{#if playGrowth}

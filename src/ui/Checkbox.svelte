@@ -22,6 +22,10 @@
 	.label {
 		font-size: 0.8em;
 	}
+
+	.checkbox {
+		margin: 0;
+	}
 </style>
 
 <div class="container">
@@ -29,6 +33,7 @@
 		{label}
 	</div>
 	<input type="checkbox"
+		class="checkbox"
 		bind:checked={value}
 		on:change={change}
 	/>

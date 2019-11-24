@@ -2,6 +2,7 @@
 	import Parameter from './Parameter.svelte';
 	import Slider from './Slider.svelte';
 	import Checkbox from './Checkbox.svelte';
+	import Button from './Button.svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
@@ -13,6 +14,7 @@
 	}
 
 	export let parameters = {};
+	export let exportModel;
 	let step = 0.01;
 
 
@@ -76,6 +78,16 @@
 				bind:value={parameters.wireframe}
 				on:change={() => change('wireframe')}
 			/>
+		</Parameter>
+	</div>
+
+	<div class="controls">
+		<Parameter label="Export 3D model">
+			<Button
+				on:click={exportModel}
+			>
+			Export to OBJ
+			</Button>
 		</Parameter>
 	</div>
 </div>

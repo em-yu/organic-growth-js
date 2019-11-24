@@ -24,11 +24,6 @@ const TIME_STEP = 0.01;
 const GROWTH_FADE = 0.5;
 const GROWTH_SCALE = 2.0;
 
-let growthZone = 0.5;
-let smoothness = 0.7;
-let colorGrowth = true;
-
-
 let growCounter = 0;
 
 export let sceneGeometry;
@@ -37,7 +32,9 @@ let collisions;
 let initialized = false;
 
 
-export function init() {
+export function init(params) {
+
+	let { growthZone, smoothness, gravity } = params;
 
 	growCounter = 0;
 	initialized = true;
@@ -73,7 +70,7 @@ export function grow(params) {
 	if (!initialized)
 		return;
 
-	let { growthZone, smoothness, gravity } = params;
+	let { growthZone, smoothness, gravity, colorGrowth } = params;
 
 	growthProcess.growEdges(GROWTH_SCALE);
 	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
