@@ -92,7 +92,7 @@ export default class EdgeBasedGrowth {
 		}
 	}
 
-	growEdges(growthScale) {
+	growEdges() {
 		let vertexGrowthFactors = this.growthFactors;
 
 		let toSplit = [];
@@ -106,8 +106,7 @@ export default class EdgeBasedGrowth {
 
 			let phi = Math.max(phiA, phiB);
 			let newEdgeLength = edgeLength
-													* (1 + phi)
-													* growthScale;
+													* (1 + phi);
 			if (newEdgeLength > this.edgeThreshold) {
 				toSplit.push(e);
 			}

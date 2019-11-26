@@ -121,6 +121,7 @@ export default class Renderer {
 		let dir = new THREE.Vector3(x, y, z);
 		var origin = new THREE.Vector3( 0, 0, 0 );
 		var length = dir.length() + 0.01;
+		dir = dir.normalize();
 		gravity_arrow = new THREE.ArrowHelper( dir, origin, length, 0xffff00 );
 		this.scene.add( gravity_arrow );
 	}

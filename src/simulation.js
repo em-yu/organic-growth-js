@@ -14,16 +14,12 @@ const MAX_POINTS = 100000;
 // MAGIC CONSTANTS
 
 // Stiffness (inter-cell repulsion)
-const Ke = 3.0;
+const Ke = 1.8;
 const REPULSE_COEFF = 1.0; // non-adjacent cells rest distance = edge length * REPULSE_COEFF
-
-const G = 1.0;
-let g_dir;
 
 const TIME_STEP = 1e-1;
 
 const GROWTH_FADE = 0.5;
-const GROWTH_SCALE = 1.5;
 
 let growCounter = 0;
 
@@ -46,7 +42,7 @@ export function init(params) {
 
 	// Initialise growth process
 	let sources = sceneGeometry.setGrowthSources(1);
-	growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * 2);
+	growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength);
 	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
 
 	// Initialise collision detection
@@ -58,16 +54,17 @@ export function init(params) {
 
 	// Input mesh dependent parameters
 	switch (params.model) {
-		case "disk", "quad":
-			g_dir = new Vector(0.0, 0.0, G);
+		case "disk":
+		case "quad":
+			// g_dir = new Vector(0.0, 0.0, G);
 			sceneGeometry.raiseEdge(0.01);
 			break;
 		case "cylinder":
-			g_dir = new Vector(0.0, -G, 0.0);
+			// g_dir = new Vector(0.0, -G, 0.0);
 			sceneGeometry.stretchEdge(0.3);
 			break;
 		default:
-			g_dir = new Vector(0.0, 0.0, G);
+			// g_dir = new Vector(0.0, 0.0, G);
 	}
 	// let groundPlane = new RepulsivePlane(
 	// 	new Vector(0, 0, 1),
@@ -92,7 +89,7 @@ export function grow(params) {
 
 	let { growthZone, smoothness, gravity, colorGrowth } = params;
 
-	growthProcess.growEdges(GROWTH_SCALE);
+	growthProcess.growEdges();
 	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
 	
   // Update colors based on growth factors
@@ -105,8 +102,9 @@ export function grow(params) {
   const positions = sceneGeometry.getPositions();
 
   sceneGeometry.balanceMesh();
-  integrateForces(positions, sceneGeometry.mesh, gravity);
+  integrateForces(positions, sceneGeometry.mesh, gravity.vector);
 	sceneGeometry.smoothMesh(smoothness);
+
 
   growCounter++;
   console.log("Grow step: " + growCounter);
@@ -123,7 +121,7 @@ export function updateGrowthColors(params) {
 	sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
 }
 
-function integrateForces(X, mesh, g_coeff) {
+function integrateForces(X, mesh, gravity) {
 
   const nVertex = mesh.vertices.length;
 
@@ -132,14 +130,13 @@ function integrateForces(X, mesh, g_coeff) {
 	let dV = repulseForce.timesReal(TIME_STEP);
 
 	// Gravity
-	let dV_gravity = g_dir.times(g_coeff);
-	dV_gravity.scaleBy(TIME_STEP);
+	let dV_gravity = gravity.times(TIME_STEP);
 
 	// Update positions
 	for (let i = 0; i < nVertex; i++) {
 		let dVi = new Vector(dV.get(3 * i, 0), dV.get(3 * i + 1, 0), dV.get(3 * i + 2, 0));
 		// Gravity
-		dVi.incrementBy( dV_gravity )
+		dVi.incrementBy( dV_gravity );
 		X[i].incrementBy(dVi.times(TIME_STEP * mesh.vertices[i].growthFactor));
 	}		
 

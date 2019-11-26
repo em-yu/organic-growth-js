@@ -1,7 +1,7 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 
-import smallDisk from './obj/small_disk_2.obj';
+import smallDisk from './obj/small_disk.obj';
 
 export function initMesh(shape) {
 	switch (shape) {

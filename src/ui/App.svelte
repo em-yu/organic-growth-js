@@ -12,13 +12,18 @@
 	let parameters = {
 		smoothness: 0.75,
 		growthZone: 0.5,
-		gravity: 2.0,
-		g_dir: new Vector(0.0, -1.0, 0.0), // Hardcoded
+		// gravity: 2.0,
+		gravity: {
+			axis: "z",
+			orientation: "+",
+			magnitude: 2.0,
+			vector: new Vector(0.0, 0.0, 2.0)
+		},
 		colorGrowth: true,
 		wireframe: false,
 		model: "disk",
 	};
-	let sceneEditMode = true;
+	let sceneEditMode = false;
 
 	const MAX_POINTS = 100000; // Is defined twice (simulation.js)
 
@@ -54,18 +59,20 @@
 		simInit(parameters);
 		logs = "Simulation initialized. Vertices: " + sceneGeometry.nVertices();
 		renderer.updateGeometry(sceneGeometry);
-		let vec = parameters.g_dir.times(parameters.gravity);
-		renderer.removeGravityArrow();
-		renderer.drawGravityArrow(vec.x, vec.y, vec.z);
+		onGravityChange();
 	}
 
 	function updateParameters(event) {
 		if (event.detail.updatedParam == 'growthZone')
 			onGrowthParamsChange();
 		if (event.detail.updatedParam == 'gravity' || event.detail.updatedParam == 'g_dir') {
-			renderer.removeGravityArrow();
-			let vec = parameters.g_dir.times(parameters.gravity);
-			renderer.drawGravityArrow(vec.x, vec.y, vec.z);
+			let gravity = new Vector();
+			for (let axis of ["x", "y", "z"]) {
+				let orientation = parameters.gravity.orientation === "+" ? 1 : -1;
+				gravity[axis] = axis === parameters.gravity.axis ? orientation * parameters.gravity.magnitude : 0;
+			}
+			parameters.gravity.vector = gravity;
+			onGravityChange();
 		}
 	}
 
@@ -74,6 +81,12 @@
 			return;
 		updateGrowthColors(parameters);
 		renderer.updateGeometry(sceneGeometry);
+	}
+
+	function onGravityChange() {
+		renderer.removeGravityArrow();
+		let gravity = parameters.gravity.vector;
+		renderer.drawGravityArrow(gravity.x, gravity.y, gravity.z);
 	}
 
 	function exportModel() {

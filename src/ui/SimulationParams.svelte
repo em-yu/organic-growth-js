@@ -44,8 +44,8 @@
 
 	<Parameter label="Gravity">
 		<Slider
-			bind:value={parameters.gravity}
-			min = "0.0" max = "10.0" {step}
+			bind:value={parameters.gravity.magnitude}
+			min = "0.0" max = "5.0" {step}
 			on:change={() => change('gravity')}
 		/>
 	</Parameter>
