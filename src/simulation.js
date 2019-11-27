@@ -31,11 +31,11 @@ let initialized = false;
 
 export function init(params) {
 
-	let { growthZone, colorGrowth, sources } = params;
+	let { growthZone, colorGrowth, sources, model } = params;
 
 	initialized = true;
 
-	let inputMesh = initMesh(params.model);
+	let inputMesh = initMesh(model);
 	sceneGeometry = new SceneGeometry(MAX_POINTS);
 	sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
 
@@ -44,6 +44,16 @@ export function init(params) {
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD);
 	}
 	else {
+		if (model === 'disk' && (sources === 5 || sources === 4)) {
+			let inputMesh = initMesh('disk20');
+			sceneGeometry = new SceneGeometry(MAX_POINTS);
+			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+		}
+		if (model === 'disk' && (sources === 6)) {
+			let inputMesh = initMesh('disk18');
+			sceneGeometry = new SceneGeometry(MAX_POINTS);
+			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+		}
 		let sourcesIndex = sceneGeometry.setGrowthSources(sources);
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD, sourcesIndex);
 	}
@@ -57,10 +67,22 @@ export function init(params) {
 		REPULSE_COEFF);
 
 	// Input mesh dependent parameters
-	switch (params.model) {
+	switch (model) {
 		case "disk":
 		case "square":
 			sceneGeometry.raiseEdge(0.01);
+			// let boundaryFace = sceneGeometry.mesh.boundaries[0];
+			// for (let i = 0; i < 3; i++) {
+			// 	let maxLength = 0;
+			// 	let maxEdge;
+			// 	for (let e of boundaryFace.adjacentEdges()) {
+			// 		if (sceneGeometry.geometry.length(e) > maxLength) {
+			// 			maxLength = sceneGeometry.geometry.length(e);
+			// 			maxEdge = e;
+			// 		}
+			// 	}
+			// 	sceneGeometry.geometry.split(maxEdge);
+			// }
 		case "cylinder":
 			sceneGeometry.stretchEdge(0.01);
 			break;
@@ -74,8 +96,8 @@ export function init(params) {
 
 	// Colors
 	if (colorGrowth) {
-		sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
 		growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
+		sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
 	}
 }
 

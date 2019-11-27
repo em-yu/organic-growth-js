@@ -1,12 +1,18 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 
-import smallDisk from './obj/small_disk_4.obj';
+import smallDisk18 from './obj/small_disk_18.obj';
+import smallDisk20 from './obj/small_disk_20.obj';
+import smallDisk12 from './obj/small_disk_12.obj';
 
 export function initMesh(shape) {
 	switch (shape) {
 		case "disk":
-			return diskGeometry();
+			return MeshIO.readOBJ(smallDisk12);
+		case "disk18":
+			return MeshIO.readOBJ(smallDisk18);
+		case "disk20":
+			return MeshIO.readOBJ(smallDisk20);
 		case "square":
 		 	return planeGeometry(3, 3, 6, 6);
 		case "cylinder":
@@ -14,10 +20,6 @@ export function initMesh(shape) {
 		default:
 			console.error("Shape " + shape + " is not supported.");
 	}
-}
-
-function diskGeometry() {
-	return MeshIO.readOBJ(smallDisk);
 }
 
 /**

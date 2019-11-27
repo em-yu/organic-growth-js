@@ -78,7 +78,7 @@
 				// Automatically change gravity based on model
 				switch(parameters.model) {
 					case 'disk':
-					case 'quad':
+					case 'square':
 						parameters.gravity.axis = 'z';
 						parameters.gravity.orientation = '+';
 						break;

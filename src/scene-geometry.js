@@ -134,8 +134,6 @@ export default class SceneGeometry {
 	smoothMesh(smoothness) {
 		let scale = smoothness || 0.1;
 		for (let v of this.mesh.vertices) {
-			if (v.growthFactor < 0.2)
-				continue;
 			const onBoundary = v.onBoundary();
 			let vPos = this.geometry.positions[v.index];
 			let barycenter = new Vector();
