@@ -14,14 +14,14 @@ const MAX_POINTS = 100000;
 // MAGIC CONSTANTS
 
 // Stiffness (inter-cell repulsion)
-const Ke = 1.8;
+// const Ke = 3.0;
+const Ke = 2.0;
 const REPULSE_COEFF = 1.0; // non-adjacent cells rest distance = edge length * REPULSE_COEFF
 
 const TIME_STEP = 1e-1;
 
 const GROWTH_FADE = 0.5;
-
-let growCounter = 0;
+const GROWTH_TRESHOLD = 1.1;
 
 export let sceneGeometry;
 let growthProcess;
@@ -31,9 +31,8 @@ let initialized = false;
 
 export function init(params) {
 
-	let { growthZone, colorGrowth } = params;
+	let { growthZone, colorGrowth, sources } = params;
 
-	growCounter = 0;
 	initialized = true;
 
 	let inputMesh = initMesh(params.model);
@@ -41,8 +40,13 @@ export function init(params) {
 	sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
 
 	// Initialise growth process
-	let sources = sceneGeometry.setGrowthSources(1);
-	growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength);
+	if (sources === 0) {
+		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD);
+	}
+	else {
+		let sourcesIndex = sceneGeometry.setGrowthSources(sources);
+		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD, sourcesIndex);
+	}
 	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
 
 	// Initialise collision detection
@@ -56,15 +60,11 @@ export function init(params) {
 	switch (params.model) {
 		case "disk":
 		case "quad":
-			// g_dir = new Vector(0.0, 0.0, G);
 			sceneGeometry.raiseEdge(0.01);
 			break;
 		case "cylinder":
-			// g_dir = new Vector(0.0, -G, 0.0);
-			sceneGeometry.stretchEdge(0.3);
+			sceneGeometry.stretchEdge(0.01);
 			break;
-		default:
-			// g_dir = new Vector(0.0, 0.0, G);
 	}
 	// let groundPlane = new RepulsivePlane(
 	// 	new Vector(0, 0, 1),
@@ -104,12 +104,6 @@ export function grow(params) {
   sceneGeometry.balanceMesh();
   integrateForces(positions, sceneGeometry.mesh, gravity.vector);
 	sceneGeometry.smoothMesh(smoothness);
-
-
-  growCounter++;
-  console.log("Grow step: " + growCounter);
-	console.log(sceneGeometry.nVertices() + " vertices")
-	return "Vertices: " + sceneGeometry.nVertices();
 }
 
 export function updateGrowthColors(params) {
