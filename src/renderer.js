@@ -73,6 +73,10 @@ export default class Renderer {
 		pointLight.position.set( 20, 40, 20 );
 		this.scene.add( pointLight );
 
+		let pointLight2 = new THREE.PointLight( new THREE.Color("rgb(255, 230, 230)"), 1.0, 100 );
+		pointLight2.position.set( -20, -40, -20 );
+		this.scene.add( pointLight2 );
+
 		let ambientLight = new THREE.AmbientLight( new THREE.Color("rgb(179, 179, 179)") ); // soft white light
 		this.scene.add( ambientLight );
 	}
@@ -96,9 +100,6 @@ export default class Renderer {
 				color = colors[i];
 			}
 			else {
-				// if (v.onBoundary())
-				// 	color = EDGE_COLOR;
-				// else
 				color = DEFAULT;
 			}
 			this.bufferGeometry.attributes.color.setXYZ(i, color.x, color.y, color.z);
