@@ -98,19 +98,25 @@ export default class SceneGeometry {
 	setGrowthSources(nb) {
 		let boundaryFace = this.mesh.boundaries[0];
 		let nV = 0;
+		let boundaryIndices = []
 		for (let v of boundaryFace.adjacentVertices()) {
 			nV++;
+			boundaryIndices.push(v.index);
 		};
 		let stride = Math.floor(nV / nb);
-		let sources = [];
-		let i = 0;
-		for (let v of boundaryFace.adjacentVertices()) {
-			if (i % stride === 0) {
-				sources.push(v.index);
+		// The "leftover" from striding is distributed
+		// on approx. equally distributed strides to avoid having one noticeable big stride
+		let leftover = nV % nb;
+		let leftoverStride = Math.ceil(nb / leftover);
+		let sources = [];;
+		for (let i = 0; i < boundaryIndices.length; i += stride) {
+			if (leftover > 0 && sources.length % leftoverStride == 0) {
+				i++;
+				leftover--;
 			}
+			sources.push(boundaryIndices[i]);
 			if (sources.length >= nb)
 				break;
-			i++;
 		}
 		return sources;
 	}
@@ -128,8 +134,8 @@ export default class SceneGeometry {
 	smoothMesh(smoothness) {
 		let scale = smoothness || 0.1;
 		for (let v of this.mesh.vertices) {
-			// if (v.growthFactor < 0.5)
-			// 	continue;
+			if (v.growthFactor < 0.2)
+				continue;
 			const onBoundary = v.onBoundary();
 			let vPos = this.geometry.positions[v.index];
 			let barycenter = new Vector();

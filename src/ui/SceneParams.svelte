@@ -26,13 +26,14 @@
 	let inputOptions = [
 		"disk",
 		"cylinder",
-		"quad"
+		"square"
 	];
 	let sourcesOptions = [
 		{label: "all", value: 0},
 		3,
 		4,
-		5
+		5,
+		6
 	]
 	let axisOptions = ["x", "y", "z"];
 

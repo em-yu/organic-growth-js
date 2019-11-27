@@ -21,7 +21,7 @@ const REPULSE_COEFF = 1.0; // non-adjacent cells rest distance = edge length * R
 const TIME_STEP = 1e-1;
 
 const GROWTH_FADE = 0.5;
-const GROWTH_TRESHOLD = 1.1;
+const GROWTH_TRESHOLD = 1.0;
 
 export let sceneGeometry;
 let growthProcess;
@@ -59,9 +59,8 @@ export function init(params) {
 	// Input mesh dependent parameters
 	switch (params.model) {
 		case "disk":
-		case "quad":
+		case "square":
 			sceneGeometry.raiseEdge(0.01);
-			break;
 		case "cylinder":
 			sceneGeometry.stretchEdge(0.01);
 			break;

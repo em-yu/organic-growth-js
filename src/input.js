@@ -1,14 +1,14 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 
-import smallDisk from './obj/small_disk_2.obj';
+import smallDisk from './obj/small_disk_4.obj';
 
 export function initMesh(shape) {
 	switch (shape) {
 		case "disk":
 			return diskGeometry();
-		case "quad":
-		 	return planeGeometry(3, 1, 6, 2);
+		case "square":
+		 	return planeGeometry(3, 3, 6, 6);
 		case "cylinder":
 			return CylinderBufferGeometry(4, 4, 4, 20, 6, false);
 		default:
