@@ -20,6 +20,8 @@
 	export let parameters = {};
 	export let exportModel;
 	export let resetHandler;
+	export let growthSteps;
+
 	let step = 0.01;
 
 	export let sceneEditMode;
@@ -56,10 +58,10 @@
 		align-items: center;
 	}
 
-	.hint {
+	/* .hint {
 		padding: 5px;
 		color: #DADADA;
-	}
+	} */
 
 	.single-button {
 		width: 50px;
@@ -74,16 +76,16 @@
 		<div class="done-container">
 			<div class="controls single-button">
 					<IconButton on:click={() => { switchMode() }}>
-						<i class="material-icons">done</i>
+						<i class="material-icons">arrow_back</i>
 					</IconButton>
 			</div>
-			<div class="hint">
+			<!-- <div class="hint">
 				Click here to start simulation
-			</div>
+			</div> -->
 		</div>
 	{:else}
 		<div class="controls single-button">
-			<IconButton on:click={() => { showPopup = true; }}>
+			<IconButton on:click={() => { growthSteps > 0 ? showPopup = true : switchMode(); }}>
 				<i class="material-icons">category</i>
 			</IconButton>
 		</div>

@@ -23,6 +23,17 @@
 
 	let step = 0.01;
 
+	let inputOptions = [
+		"disk",
+		"cylinder",
+		"quad"
+	];
+	let sourcesOptions = [
+		{label: "all", value: 0},
+		3,
+		4,
+		5
+	]
 	let axisOptions = ["x", "y", "z"];
 
 </script>
@@ -42,7 +53,23 @@
 	} */
 
 </style>
-	
+
+<ControlsGroup>
+	<Parameter label="Input 3D model">
+		<ToggleSelect
+			options={inputOptions}
+			bind:value={parameters.model}
+			on:change={() => { change('model') }}
+		/>
+	</Parameter>
+	<Parameter label="Sources">
+		<ToggleSelect
+			options={sourcesOptions}
+			bind:value={parameters.sources}
+			on:change={() => { change('sources') }}
+		/>
+	</Parameter>
+</ControlsGroup>
 	
 <ControlsGroup>
 	<Parameter label="Gravity direction">
@@ -55,37 +82,6 @@
 			options={["+", "-"]}
 			bind:value={parameters.gravity.orientation}
 			on:change={updateGravity}
-		/>
-		<!-- <div class="labeled-slider">
-			<div class="label">x</div>
-			<Slider
-				min = "0.0" max = "1.0" {step}
-				on:change={updateGravity("x")}
-			/>
-		</div>
-		<div class="labeled-slider">
-			<div class="label">y</div>
-			<Slider
-				min = "0.0" max = "1.0" {step}
-				on:change={updateGravity("y")}
-			/>
-		</div>
-		<div class="labeled-slider">
-			<div class="label">z</div>
-			<Slider
-				min = "0.0" max = "1.0" {step}
-				on:change={updateGravity("z")}
-			/>
-		</div> -->
-	</Parameter>
-</ControlsGroup>
-
-<ControlsGroup>
-	<Parameter label="Material">
-		<Checkbox
-			label="Wireframe"
-			bind:checked={parameters.wireframe}
-			on:change={() => change('wireframe')}
 		/>
 	</Parameter>
 </ControlsGroup>

@@ -3,6 +3,7 @@
 	import ControlsGroup from './ControlsGroup.svelte';
 	import Slider from './Slider.svelte';
 	import Checkbox from './Checkbox.svelte';
+	import ToggleSelect from './ToggleSelect.svelte';
 	import Button from './Button.svelte';
 	import { createEventDispatcher } from 'svelte';
 
@@ -53,9 +54,9 @@
 
 <ControlsGroup>
 	<Parameter label="View">
-		<Checkbox
-			label="Wireframe"
-			bind:checked={parameters.wireframe}
+		<ToggleSelect
+			options={["Wireframe", "Solid"]}
+			bind:value={parameters.material}
 			on:change={() => change('wireframe')}
 		/>
 	</Parameter>

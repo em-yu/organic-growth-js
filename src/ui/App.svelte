@@ -8,20 +8,21 @@
 	import { sceneGeometry, grow, init as simInit, updateGrowthColors } from '../simulation.js';
 	import { exportOBJ } from '../output.js';
 
-	let logs = "";
+	let steps = 0;
+	let nVertices = 0;
 	let parameters = {
 		smoothness: 0.75,
 		growthZone: 0.5,
-		// gravity: 2.0,
 		gravity: {
 			axis: "z",
 			orientation: "+",
 			magnitude: 2.0,
-			vector: new Vector(0.0, 0.0, 2.0)
+			vector: undefined,
 		},
 		colorGrowth: true,
-		wireframe: false,
+		material: "Solid",
 		model: "disk",
+		sources: 0,
 	};
 	let sceneEditMode = false;
 
@@ -40,7 +41,7 @@
 
 	function animate() {
 
-		renderer.render(parameters.wireframe);
+		renderer.render(parameters.material === 'Wireframe');
 		if (playGrowth) {
 			renderer.removeGravityArrow();
 			growthStep();
@@ -51,28 +52,46 @@
 	}
 
 	function growthStep() {
-		logs = grow(parameters);
+		let growthInfo = grow(parameters);
+		steps++;
+		nVertices = sceneGeometry.nVertices();
 		renderer.updateGeometry(sceneGeometry);
 	}
 
 	function init() {
 		simInit(parameters);
-		logs = "Simulation initialized. Vertices: " + sceneGeometry.nVertices();
+		steps = 0;
+		nVertices = sceneGeometry.nVertices();
 		renderer.updateGeometry(sceneGeometry);
 		onGravityChange();
 	}
 
 	function updateParameters(event) {
-		if (event.detail.updatedParam == 'growthZone')
-			onGrowthParamsChange();
-		if (event.detail.updatedParam == 'gravity' || event.detail.updatedParam == 'g_dir') {
-			let gravity = new Vector();
-			for (let axis of ["x", "y", "z"]) {
-				let orientation = parameters.gravity.orientation === "+" ? 1 : -1;
-				gravity[axis] = axis === parameters.gravity.axis ? orientation * parameters.gravity.magnitude : 0;
-			}
-			parameters.gravity.vector = gravity;
-			onGravityChange();
+		switch(event.detail.updatedParam) {
+			case 'growthZone':
+				onGrowthParamsChange();
+				break;
+			case 'gravity':
+				onGravityChange();
+				break;
+			case 'model':
+				// Automatically change gravity based on model
+				switch(parameters.model) {
+					case 'disk':
+					case 'quad':
+						parameters.gravity.axis = 'z';
+						parameters.gravity.orientation = '+';
+						break;
+					case 'cylinder':
+						parameters.gravity.axis = 'y';
+						parameters.gravity.orientation = '-';
+						break;
+				}
+				init();
+				break;
+			case 'sources':
+				init();
+				break;
 		}
 	}
 
@@ -84,10 +103,19 @@
 	}
 
 	function onGravityChange() {
+		let gravity = new Vector();
+		for (let axis of ["x", "y", "z"]) {
+			let orientation = parameters.gravity.orientation === "+" ? 1 : -1;
+			gravity[axis] = axis === parameters.gravity.axis ? orientation * parameters.gravity.magnitude : 0;
+		}
+		parameters.gravity.vector = gravity;
 		renderer.removeGravityArrow();
-		let gravity = parameters.gravity.vector;
 		renderer.drawGravityArrow(gravity.x, gravity.y, gravity.z);
 	}
+
+	// function onModelChange() {
+	// 	init();
+	// }
 
 	function exportModel() {
 		exportOBJ(sceneGeometry);
@@ -99,6 +127,7 @@
 <SideControls
 	bind:parameters={parameters}
 	bind:sceneEditMode={sceneEditMode}
+	bind:growthSteps={steps}
 	on:change={updateParameters}
 	exportModel={exportModel}
 	resetHandler={init} />
@@ -109,7 +138,9 @@
 	<Logger>
 		{#if playGrowth}
 			Growing...<br/>
+		{:else}
+			Growth steps: {steps} <br/>
 		{/if}
-		{logs}
+		Vertices: {nVertices}
 	</Logger>
 {/if}

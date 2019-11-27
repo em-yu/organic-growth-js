@@ -100,14 +100,16 @@ export default class SceneGeometry {
 		let nV = 0;
 		for (let v of boundaryFace.adjacentVertices()) {
 			nV++;
-		}
-		let stride = Math.ceil(nV / nb);
+		};
+		let stride = Math.floor(nV / nb);
 		let sources = [];
 		let i = 0;
 		for (let v of boundaryFace.adjacentVertices()) {
 			if (i % stride === 0) {
 				sources.push(v.index);
 			}
+			if (sources.length >= nb)
+				break;
 			i++;
 		}
 		return sources;
@@ -126,6 +128,8 @@ export default class SceneGeometry {
 	smoothMesh(smoothness) {
 		let scale = smoothness || 0.1;
 		for (let v of this.mesh.vertices) {
+			// if (v.growthFactor < 0.5)
+			// 	continue;
 			const onBoundary = v.onBoundary();
 			let vPos = this.geometry.positions[v.index];
 			let barycenter = new Vector();
