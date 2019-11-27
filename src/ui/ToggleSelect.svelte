@@ -4,8 +4,16 @@
 	const dispatch = createEventDispatcher();
 
 	function change(selected) {
-		value = selected;
+		value = getValue(selected);
 		dispatch('change');
+	}
+
+	function getValue(option) {
+		return option.value === undefined ? option : option.value;
+	}
+
+	function getLabel(option) {
+		return option.label === undefined ? option : option.label;
 	}
 
 	export let options;
@@ -20,14 +28,14 @@
 		border-radius: 2px;
 		border: solid 1px #DADADA;
 		display: flex;
-		margin: 5px;
+		margin: 0 0 0.5em 0;
 	}
 
 	.option {
 		flex: 1;
 		text-align: center;
-    font-weight: 700;
     padding: 5px;
+		font-weight: 700;
 	}
 
 	.option:not(:last-child) {
@@ -52,8 +60,8 @@
 
 <div class="container">
 	{#each options as option}
-		<div class="option" class:selected={value === option} on:click={() => change(option)}>
-			{option}
+		<div class="option" class:selected={value === getValue(option)} on:click={() => change(option)}>
+			{getLabel(option)}
 		</div>
 	{/each}
 </div>
