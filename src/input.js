@@ -1,7 +1,7 @@
 import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 import MeshIO from '../geometry-processing-js/node/utils/meshio';
 
-import smallDisk from './obj/small_disk.obj';
+import smallDisk from './obj/small_disk_2.obj';
 
 export function initMesh(shape) {
 	switch (shape) {
@@ -10,7 +10,7 @@ export function initMesh(shape) {
 		case "quad":
 		 	return planeGeometry(3, 1, 6, 2);
 		case "cylinder":
-			return CylinderBufferGeometry(4, 4, 3, 30, 6, false);
+			return CylinderBufferGeometry(4, 4, 4, 20, 6, false);
 		default:
 			console.error("Shape " + shape + " is not supported.");
 	}
