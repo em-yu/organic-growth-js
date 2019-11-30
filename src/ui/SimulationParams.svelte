@@ -13,11 +13,23 @@
 		dispatch('change', {
 			updatedParam: param
 		});
+	};
+
+	function updateGravity() {
+		change('gravity');
 	}
 
 	export let parameters = {};
-	export let exportModel;
+
 	let step = 0.01;
+	let axisOptions = ["x", "y", "z"];
+	let sourcesOptions = [
+		{label: "all", value: 0},
+		3,
+		4,
+		5,
+		6
+	];
 
 </script>
 
@@ -43,6 +55,18 @@
 		/>
 	</Parameter>
 
+	<Parameter label="Growth sources">
+		<ToggleSelect
+			options={sourcesOptions}
+			bind:value={parameters.sources}
+			on:change={() => { change('sources') }}
+		/>
+	</Parameter>
+
+
+</ControlsGroup>
+
+<ControlsGroup>
 	<Parameter label="Gravity">
 		<Slider
 			bind:value={parameters.gravity.magnitude}
@@ -50,24 +74,16 @@
 			on:change={() => change('gravity')}
 		/>
 	</Parameter>
-</ControlsGroup>
-
-<ControlsGroup>
-	<Parameter label="View">
+	<Parameter label="Gravity direction">
 		<ToggleSelect
-			options={["Wireframe", "Solid"]}
-			bind:value={parameters.material}
-			on:change={() => change('wireframe')}
+			options={axisOptions}
+			bind:value={parameters.gravity.axis}
+			on:change={updateGravity}
 		/>
-	</Parameter>
-</ControlsGroup>
-
-<ControlsGroup>
-	<Parameter label="Export 3D model">
-		<Button
-			on:click={exportModel}
-		>
-		Export to OBJ
-		</Button>
+		<ToggleSelect
+			options={["+", "-"]}
+			bind:value={parameters.gravity.orientation}
+			on:change={updateGravity}
+		/>
 	</Parameter>
 </ControlsGroup>

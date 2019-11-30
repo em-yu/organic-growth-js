@@ -5,6 +5,7 @@
 	import Checkbox from './Checkbox.svelte';
 	import Button from './Button.svelte';
 	import ToggleSelect from './ToggleSelect.svelte';
+	import Popup from './Popup.svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
@@ -13,29 +14,28 @@
 		dispatch('change', {
 			updatedParam: param
 		});
-	}
+	};
 
-	function updateGravity() {
-		change('gravity');
+	function updateInputModel() {
+		parameters.model = selectedModel;
+		change('model');
 	}
 
 	export let parameters = {};
+	export let growthSteps;
+	export let exportModel;
 
 	let step = 0.01;
+	let showPopup = false;
+	let selectedModel = parameters.model;
 
 	let inputOptions = [
 		"disk",
 		"cylinder",
 		"square"
 	];
-	let sourcesOptions = [
-		{label: "all", value: 0},
-		3,
-		4,
-		5,
-		6
-	]
-	let axisOptions = ["x", "y", "z"];
+
+
 
 </script>
 
@@ -55,34 +55,42 @@
 
 </style>
 
-<ControlsGroup>
+<ControlsGroup right>
 	<Parameter label="Input 3D model">
 		<ToggleSelect
 			options={inputOptions}
-			bind:value={parameters.model}
-			on:change={() => { change('model') }}
-		/>
-	</Parameter>
-	<Parameter label="Sources">
-		<ToggleSelect
-			options={sourcesOptions}
-			bind:value={parameters.sources}
-			on:change={() => { change('sources') }}
+			bind:value={selectedModel}
+			on:change={() => { if (growthSteps > 0) { showPopup = true; } else { updateInputModel() } }}
 		/>
 	</Parameter>
 </ControlsGroup>
 	
-<ControlsGroup>
-	<Parameter label="Gravity direction">
+
+<ControlsGroup right>
+	<Parameter label="View">
 		<ToggleSelect
-			options={axisOptions}
-			bind:value={parameters.gravity.axis}
-			on:change={updateGravity}
-		/>
-		<ToggleSelect
-			options={["+", "-"]}
-			bind:value={parameters.gravity.orientation}
-			on:change={updateGravity}
+			options={["Wireframe", "Solid"]}
+			bind:value={parameters.material}
+			on:change={() => change('wireframe')}
 		/>
 	</Parameter>
 </ControlsGroup>
+
+<ControlsGroup right>
+	<Parameter label="Export 3D model">
+		<Button
+			on:click={exportModel}
+		>
+		Export to OBJ
+		</Button>
+	</Parameter>
+</ControlsGroup>
+
+{#if showPopup}
+	<Popup
+		confirmHandler={() => { updateInputModel(); showPopup = false;}}
+		cancelHandler={() => { showPopup = false; selectedModel = parameters.model }}>
+		<h3>Change input mesh?</h3>
+		<p>By changing input mesh, all current growth progress will be lost.</p>
+	</Popup>
+{/if}

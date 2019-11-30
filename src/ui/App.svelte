@@ -1,11 +1,11 @@
 <script>
 	import Vector from '../../geometry-processing-js/node/linear-algebra/vector';
 	import MainControls from './MainControls.svelte';
-	import SideControls from './SideControls.svelte';
+	import Controls from './Controls.svelte';
 	import Logger from './Logger.svelte';
 
 	import Renderer from '../renderer.js';
-	import { sceneGeometry, grow, init as simInit, updateGrowthColors } from '../simulation.js';
+	import { sceneGeometry, grow, init as simInit, handleGrowthZoneUpdate, handleSourcesUpdate } from '../simulation.js';
 	import { exportOBJ } from '../output.js';
 
 	let steps = 0;
@@ -90,15 +90,17 @@
 				init();
 				break;
 			case 'sources':
-				init();
+				// init();
+				onSourcesChange();
 				break;
 		}
 	}
 
+	// This ensures visual feedback: color of the model is updated to represent the growth zone change
 	function onGrowthParamsChange() {
 		if (!parameters.colorGrowth)
 			return;
-		updateGrowthColors(parameters);
+		handleGrowthZoneUpdate(parameters);
 		renderer.updateGeometry(sceneGeometry);
 	}
 
@@ -113,6 +115,11 @@
 		renderer.drawGravityArrow(gravity.x, gravity.y, gravity.z);
 	}
 
+	function onSourcesChange() {
+		handleSourcesUpdate(parameters);
+		renderer.updateGeometry(sceneGeometry);
+	}
+
 	// function onModelChange() {
 	// 	init();
 	// }
@@ -124,13 +131,15 @@
 
 </script>
 
-<SideControls
+
+<Controls 
 	bind:parameters={parameters}
 	bind:sceneEditMode={sceneEditMode}
 	bind:growthSteps={steps}
 	on:change={updateParameters}
 	exportModel={exportModel}
-	resetHandler={init} />
+	resetHandler={init}
+/>
 
 {#if !sceneEditMode}
 	<MainControls bind:playGrowth={playGrowth} stepHandler={growthStep} resetHandler={init}/>

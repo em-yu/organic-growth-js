@@ -95,7 +95,9 @@ export default class SceneGeometry {
 		this.colors = colors;
 	}
 
-	setGrowthSources(nb) {
+	getGrowthSources(nb) {
+		if (!nb)
+			return;
 		let boundaryFace = this.mesh.boundaries[0];
 		let nV = 0;
 		let boundaryIndices = []

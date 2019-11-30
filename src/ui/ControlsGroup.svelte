@@ -1,3 +1,7 @@
+<script>
+	export let right;
+</script>
+
 <style>
 	.controls {
 		background: #2C2C2C;
@@ -9,8 +13,12 @@
 		display: flex;
 		flex-direction: column;
 	}
+
+	.right {
+		border-radius: 6px 0 0 6px;
+	}
 </style>
 
-<div class="controls">
+<div class="controls" class:right>
 	<slot></slot>
 </div>

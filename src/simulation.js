@@ -44,17 +44,17 @@ export function init(params) {
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD);
 	}
 	else {
-		if (model === 'disk' && (sources === 5 || sources === 4)) {
+		// if (model === 'disk' && (sources === 5 || sources === 4)) {
 			let inputMesh = initMesh('disk20');
 			sceneGeometry = new SceneGeometry(MAX_POINTS);
 			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
-		}
-		if (model === 'disk' && (sources === 6)) {
-			let inputMesh = initMesh('disk18');
-			sceneGeometry = new SceneGeometry(MAX_POINTS);
-			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
-		}
-		let sourcesIndex = sceneGeometry.setGrowthSources(sources);
+		// }
+		// if (model === 'disk' && (sources === 6)) {
+		// 	let inputMesh = initMesh('disk18');
+		// 	sceneGeometry = new SceneGeometry(MAX_POINTS);
+		// 	sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+		// }
+		let sourcesIndex = sceneGeometry.getGrowthSources(sources);
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD, sourcesIndex);
 	}
 	growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
@@ -71,18 +71,6 @@ export function init(params) {
 		case "disk":
 		case "square":
 			sceneGeometry.raiseEdge(0.01);
-			// let boundaryFace = sceneGeometry.mesh.boundaries[0];
-			// for (let i = 0; i < 3; i++) {
-			// 	let maxLength = 0;
-			// 	let maxEdge;
-			// 	for (let e of boundaryFace.adjacentEdges()) {
-			// 		if (sceneGeometry.geometry.length(e) > maxLength) {
-			// 			maxLength = sceneGeometry.geometry.length(e);
-			// 			maxEdge = e;
-			// 		}
-			// 	}
-			// 	sceneGeometry.geometry.split(maxEdge);
-			// }
 		case "cylinder":
 			sceneGeometry.stretchEdge(0.01);
 			break;
@@ -96,11 +84,9 @@ export function init(params) {
 
 	// Colors
 	if (colorGrowth) {
-		growthProcess.updateGrowthFactors(GROWTH_FADE, 1 - growthZone);
 		sceneGeometry.setColors(growthProcess.growthFactors, -1, 1);
 	}
 }
-
 
 
 export function grow(params) {
@@ -127,7 +113,14 @@ export function grow(params) {
 	sceneGeometry.smoothMesh(smoothness);
 }
 
-export function updateGrowthColors(params) {
+
+export function handleSourcesUpdate(params) {
+	const { sources } = params;
+	growthProcess.sources = sceneGeometry.getGrowthSources(sources);
+	handleGrowthZoneUpdate(params);
+}
+
+export function handleGrowthZoneUpdate(params) {
 	if (!initialized)
 		return;
 	let { growthZone } = params;
