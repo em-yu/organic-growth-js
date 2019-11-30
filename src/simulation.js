@@ -45,9 +45,9 @@ export function init(params) {
 	}
 	else {
 		// if (model === 'disk' && (sources === 5 || sources === 4)) {
-			let inputMesh = initMesh('disk20');
-			sceneGeometry = new SceneGeometry(MAX_POINTS);
-			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+			// let inputMesh = initMesh('disk20');
+			// sceneGeometry = new SceneGeometry(MAX_POINTS);
+			// sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
 		// }
 		// if (model === 'disk' && (sources === 6)) {
 		// 	let inputMesh = initMesh('disk18');
