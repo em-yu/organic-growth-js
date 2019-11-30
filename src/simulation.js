@@ -6,7 +6,7 @@ import { initMesh } from './input';
 import SceneGeometry from './scene-geometry';
 import ParticleCollisions from './particle-collisions';
 import EdgeBasedGrowth from './edge-based-growth';
-import RepulsivePlane from './repulsive-plane';
+// import RepulsivePlane from './repulsive-plane';
 
 
 const MAX_POINTS = 100000;
@@ -44,6 +44,18 @@ export function init(params) {
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD);
 	}
 	else {
+		// For higher number of sources, it is best to switch input mesh to more subdivided ones.
+		// Result is more symmetrical due to better distributed sources
+		if (model === 'disk' && (sources === 5 || sources === 4)) {
+			let inputMesh = initMesh('disk20');
+			sceneGeometry = new SceneGeometry(MAX_POINTS);
+			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+		}
+		if (model === 'disk' && (sources === 6)) {
+			let inputMesh = initMesh('disk18');
+			sceneGeometry = new SceneGeometry(MAX_POINTS);
+			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+		}
 		let sourcesIndex = sceneGeometry.getGrowthSources(sources);
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD, sourcesIndex);
 	}

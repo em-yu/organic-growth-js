@@ -116,8 +116,14 @@
 	}
 
 	function onSourcesChange() {
-		handleSourcesUpdate(parameters);
-		renderer.updateGeometry(sceneGeometry);
+		// If sources are changed at step 0 for disk model, the mesh may need to be reloaded
+		if (steps === 0 && parameters.model === 'disk') {
+			init();
+		}
+		else {
+			handleSourcesUpdate(parameters);
+			renderer.updateGeometry(sceneGeometry);
+		}
 	}
 
 	// function onModelChange() {
