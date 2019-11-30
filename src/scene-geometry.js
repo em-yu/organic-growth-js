@@ -96,8 +96,6 @@ export default class SceneGeometry {
 	}
 
 	getGrowthSources(nb) {
-		if (!nb)
-			return;
 		let boundaryFace = this.mesh.boundaries[0];
 		let nV = 0;
 		let boundaryIndices = []
@@ -105,6 +103,8 @@ export default class SceneGeometry {
 			nV++;
 			boundaryIndices.push(v.index);
 		};
+		if (nb === 0)
+			return boundaryIndices;
 		let stride = Math.floor(nV / nb);
 		// The "leftover" from striding is distributed
 		// on approx. equally distributed strides to avoid having one noticeable big stride

@@ -32,7 +32,9 @@ export default class EdgeBasedGrowth {
 
 		if (this.sources !== undefined) {
 			for (let source of this.sources) {
-				delta.set(1, source, 0);
+				let v = this.mesh.vertices[source];
+				if (!this.isColliding(this.geometry.positions[v.index]))
+					delta.set(1, source, 0);
 			}
 		}
 		else {
@@ -68,7 +70,7 @@ export default class EdgeBasedGrowth {
 		// Growth factor (between 0 and 1, max closer to the growth zone)
 		let growthFactor = max.minus(distanceToSource).timesReal(1 / maxDist);
 
-		// Apply growth fade exponent
+		// Apply smooth step function
 		for (let i = 0; i < V; i++) {
 			let factor = this.smoothStep(growthFactor.get(i, 0), growthFade, growthZone);
 			growthFactor.set( factor, i, 0);
@@ -83,12 +85,13 @@ export default class EdgeBasedGrowth {
 	}
 
 	smoothStep(x, s, p) {
+		let x_clamped = Math.max(Math.min(x, 1.0), 0.0);
 		const c = 2 / (1-s) - 1;
-		if (x <= p) {
-			return Math.pow(x/p, c) * p;
+		if (x_clamped <= p) {
+			return Math.pow(x_clamped/p, c) * p;
 		}
 		else {
-			return 1 - Math.pow((1-x)/(1-p), c) * (1-p);
+			return 1 - Math.pow((1-x_clamped)/(1-p), c) * (1-p);
 		}
 	}
 
@@ -113,7 +116,13 @@ export default class EdgeBasedGrowth {
 		}
 
 		for (let e of toSplit) {
-			this.geometry.split(e);
+			let newIndex = this.geometry.split(e);
+			// let vA = e.halfedge.vertex;
+			// let vB = e.halfedge.twin.vertex;
+			// Add new vertex to sources?
+			// if (e.onBoundary() && this.sources && (this.sources.includes(vA.index) || this.sources.includes(vB.index))) {
+			// 	this.sources.push(newIndex);
+			// }
 		}
 
 	}

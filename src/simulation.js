@@ -44,16 +44,6 @@ export function init(params) {
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD);
 	}
 	else {
-		// if (model === 'disk' && (sources === 5 || sources === 4)) {
-			// let inputMesh = initMesh('disk20');
-			// sceneGeometry = new SceneGeometry(MAX_POINTS);
-			// sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
-		// }
-		// if (model === 'disk' && (sources === 6)) {
-		// 	let inputMesh = initMesh('disk18');
-		// 	sceneGeometry = new SceneGeometry(MAX_POINTS);
-		// 	sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
-		// }
 		let sourcesIndex = sceneGeometry.getGrowthSources(sources);
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD, sourcesIndex);
 	}
