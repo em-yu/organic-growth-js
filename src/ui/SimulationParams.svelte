@@ -34,7 +34,17 @@
 </script>
 
 <style>
+	.labeled-slider {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
 
+	.labeled-slider .label {
+		font-size: 0.8em;
+		padding: 5px;
+		padding-right: 20px;
+	}
 </style>
 	
 	
@@ -68,22 +78,29 @@
 
 <ControlsGroup>
 	<Parameter label="Gravity">
-		<Slider
-			bind:value={parameters.gravity.magnitude}
-			min = "0.0" max = "5.0" {step}
-			on:change={() => change('gravity')}
-		/>
-	</Parameter>
-	<Parameter label="Gravity direction">
-		<ToggleSelect
-			options={axisOptions}
-			bind:value={parameters.gravity.axis}
-			on:change={updateGravity}
-		/>
-		<ToggleSelect
-			options={["+", "-"]}
-			bind:value={parameters.gravity.orientation}
-			on:change={updateGravity}
-		/>
+		<div class="labeled-slider">
+			<div class="label">Norm</div>
+			<Slider
+				bind:value={parameters.gravity.norm}
+				min = "0.0" max = "10.0" {step}
+				on:change={() => change('gravity')}
+			/>
+		</div>
+		<div class="labeled-slider">
+			<div class="label">Direction</div>
+			<Slider
+				bind:value={parameters.gravity.theta}
+				min = "0.0" max = "3.14" {step}
+				on:change={() => change('gravity')}
+			/>
+		</div>
+		<!-- <div class="labeled-slider">
+			<div class="label">Azimuth</div>
+			<Slider
+				bind:value={parameters.gravity.phi}
+				min = "-3.15" max = "3.14" {step}
+				on:change={() => change('gravity')}
+			/>
+		</div> -->
 	</Parameter>
 </ControlsGroup>

@@ -57,5 +57,5 @@
 	class="slider"
 	bind:value={value}
 	{min} {max} {step}
-	on:change={change}
+	on:input={change}
 />

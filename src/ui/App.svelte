@@ -14,9 +14,10 @@
 		smoothness: 0.75,
 		growthZone: 0.5,
 		gravity: {
-			axis: "z",
-			orientation: "+",
-			magnitude: 2.0,
+			basis: ["x", "y", "z"],
+			phi: 0,
+			theta: 0,
+			norm: 2.0,
 			vector: undefined,
 		},
 		colorGrowth: true,
@@ -75,16 +76,15 @@
 				onGravityChange();
 				break;
 			case 'model':
-				// Automatically change gravity based on model
+				// Change gravity basis (for spherical coords) depending on model (to simplify user customisation of gravity direction)
+				// The 3rd axis of gravity basis should be aligned with the axis of symmetry of the model
 				switch(parameters.model) {
 					case 'disk':
 					case 'square':
-						parameters.gravity.axis = 'z';
-						parameters.gravity.orientation = '+';
+						parameters.gravity.basis = ["x", "y", "z"]; // z is the axis of symmetry
 						break;
 					case 'cylinder':
-						parameters.gravity.axis = 'y';
-						parameters.gravity.orientation = '-';
+						parameters.gravity.basis = ["x", "z", "y"]; // y is the axis of symmetry
 						break;
 				}
 				init();
@@ -105,14 +105,14 @@
 	}
 
 	function onGravityChange() {
-		let gravity = new Vector();
-		for (let axis of ["x", "y", "z"]) {
-			let orientation = parameters.gravity.orientation === "+" ? 1 : -1;
-			gravity[axis] = axis === parameters.gravity.axis ? orientation * parameters.gravity.magnitude : 0;
-		}
-		parameters.gravity.vector = gravity;
+		const { norm, theta, phi, basis } = parameters.gravity;
+		let g = new Vector();
+		g[basis[0]] = norm * Math.sin(theta) * Math.cos(phi);
+		g[basis[1]] = norm * Math.sin(theta) * Math.sin(phi);
+		g[basis[2]] = norm * Math.cos(theta);
+		parameters.gravity.vector = g;
 		renderer.removeGravityArrow();
-		renderer.drawGravityArrow(gravity.x, gravity.y, gravity.z);
+		renderer.drawGravityArrow(g.x, g.y, g.z);
 	}
 
 	function onSourcesChange() {
