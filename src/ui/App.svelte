@@ -24,6 +24,7 @@
 		material: "Solid",
 		model: "disk",
 		sources: 0,
+		orbitModel: false,
 	};
 	let sceneEditMode = false;
 
@@ -43,7 +44,12 @@
 	function animate() {
 
 		renderer.render(parameters.material === 'Wireframe');
+
 		if (playGrowth) {
+			// Stop orbit
+			parameters.orbitModel = false;
+			onOrbitChange();
+			// Hide gravity arrow
 			renderer.removeGravityArrow();
 			growthStep();
 		}
@@ -82,9 +88,11 @@
 					case 'disk':
 					case 'square':
 						parameters.gravity.basis = ["x", "y", "z"]; // z is the axis of symmetry
+						renderer.updateCameraUp("z");
 						break;
 					case 'cylinder':
 						parameters.gravity.basis = ["x", "z", "y"]; // y is the axis of symmetry
+						renderer.updateCameraUp("y");
 						break;
 				}
 				init();
@@ -92,6 +100,9 @@
 			case 'sources':
 				// init();
 				onSourcesChange();
+				break;
+			case 'orbit':
+				onOrbitChange();
 				break;
 		}
 	}
@@ -124,6 +135,11 @@
 			handleSourcesUpdate(parameters);
 			renderer.updateGeometry(sceneGeometry);
 		}
+	}
+
+	function onOrbitChange() {
+		renderer.controls.autoRotate = parameters.orbitModel;
+		renderer.controls.update();
 	}
 
 	// function onModelChange() {

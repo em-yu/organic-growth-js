@@ -6,6 +6,8 @@ import Vector from '../geometry-processing-js/node/linear-algebra/vector';
 const DEFAULT = new Vector(1.0, 0.3, 0.3);
 const EDGE_COLOR = new Vector(1.0, 1.0, 1.0);
 
+let canvas;
+
 let gravity_arrow;
 
 export default class Renderer {
@@ -22,7 +24,7 @@ export default class Renderer {
 
 	init() {
 		// Init THREE.js scene
-		const canvas = document.createElement('canvas');
+		canvas = document.createElement('canvas');
 		document.body.appendChild(canvas);
 
 		this.renderer = new THREE.WebGLRenderer({
@@ -39,6 +41,7 @@ export default class Renderer {
 
 		this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 		this.camera.position.z = eyeZ;
+		this.camera.up = new THREE.Vector3(0, 0, 1);
 		this.controls = new OrbitControls( this.camera, canvas );
 		this.controls.update();
 
@@ -143,6 +146,26 @@ export default class Renderer {
 			var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
 			this.scene.add( arrowHelper );
 		}
+	}
+
+	updateCameraUp(axis) {
+		switch(axis) {
+			case "x":
+				this.camera.up.set(1,0,0);
+				break;
+			case "y":
+				this.camera.up.set(0,1,0);
+				this.camera.position.y = 10;
+				this.camera.position.z = 0;
+				break;
+			case "z":
+			this.camera.up.set(0,0,1);
+				this.camera.position.z = 10;
+				this.camera.position.y = 0;
+				break;
+		}
+		this.controls.dispose();
+		this.controls = new OrbitControls( this.camera, canvas );
 	}
 
 	render(wireframeMode) {

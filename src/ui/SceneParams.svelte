@@ -40,6 +40,9 @@
 </script>
 
 <style>
+	.material-icons {
+		font-size: 1.2em;
+	}
 
 </style>
 
@@ -64,6 +67,18 @@
 			bind:value={parameters.material}
 			on:change={() => change('wireframe')}
 		/>
+	</Parameter>
+	<Parameter
+		label="Orbit around model">
+		<Button
+			on:click={() => {parameters.orbitModel = !parameters.orbitModel; change('orbit')}}
+		>
+			{#if parameters.orbitModel}
+				<i class="material-icons">pause</i>
+			{:else}
+				<i class="material-icons">play_arrow</i>
+			{/if}
+		</Button>
 	</Parameter>
 </ControlsGroup>
 
