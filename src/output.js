@@ -27,11 +27,13 @@ export function exportOBJ(sceneGeometry) {
     "vt": undefined,
     "vn": normals,
     "f": geometry.indices
-  })
+  });
+
+  let fileName = "growth-simulator-" + (new Date()).toISOString() + ".obj";
 
   let element = document.createElement("a");
   element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(text));
-  element.setAttribute("download", "export.obj");
+  element.setAttribute("download", fileName);
 
   element.style.display = "none";
   document.body.appendChild(element);
