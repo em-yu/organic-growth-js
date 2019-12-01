@@ -101,7 +101,8 @@
 	<Parameter
 		label="Growth sources"
 		hint="Choose a number of growth sources on the edge of the mesh. <br/>
-				<em>All</em> corresponds to all the edge being a growth source."
+				You can visualize where the sources are on the mesh (<span style='background-color: #aa0c27'>red zones</span>). <br/>
+				This setting can be changed during the simulation too! Try to see what happens if you do."
 		>
 		<ToggleSelect
 			options={sourcesOptions}
@@ -116,8 +117,9 @@
 <ControlsGroup>
 	<Parameter
 		label="Gravity"
-		hint="Control the direction and strength of the
-					<span style='background-color: #ff0; color: black;'>gravity</span> applied to cells in the growth zone."
+		hint="Control the direction and strength of the gravity
+					<i class='material-icons' style='color: #ff0; font-size:inherit'>call_made</i>
+					applied to cells in the growth zone."
 		>
 		<div class="labeled-slider">
 			<div class="label">Norm</div>
