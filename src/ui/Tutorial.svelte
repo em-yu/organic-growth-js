@@ -67,13 +67,18 @@
 			<ul>
 				<li>
 					Start and stop the growth simulation by clicking <b><i class="material-icons play-pause">play_circle_outline</i></b>
-					or by pressing <b><code>SPACE</code></b> on your keyboard.
+					or by pressing <b><code>SPACE</code></b> on your keyboard. The simulation can be restarted from the start by clicking
+					<b><i class="material-icons play-pause">replay</i></b>
 				</li>
 				<li>
 					<b>Click and drag</b> anywhere on the scene to move the camera around. Zoom in/out by using the <b>scrolling wheel</b>.
 				</li>
 				<li>
 					Use the <b>menus on the sides</b> to customize your growing shape.
+				</li>
+				<li>
+					At any time you can pause the simulation and <b>export your result</b> to an OBJ file.
+					Feel free to do so whenever the shape looks nice to you.
 				</li>
 			</ul>
 		</div>
