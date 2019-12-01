@@ -37,10 +37,10 @@ export default class Renderer {
 		let aspect = canvas.clientWidth / canvas.clientHeight;
 		let near = 0.1;
 		let far = 100;
-		let eyeZ = 10.0;
 
 		this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-		this.camera.position.z = eyeZ;
+		this.camera.position.z = 10.0;
+		this.camera.position.x = 10.0;
 		this.camera.up = new THREE.Vector3(0, 0, 1);
 		this.controls = new OrbitControls( this.camera, canvas );
 		this.controls.update();
@@ -155,11 +155,13 @@ export default class Renderer {
 				break;
 			case "y":
 				this.camera.up.set(0,1,0);
+				this.camera.position.x = 10.0;
 				this.camera.position.y = 10;
 				this.camera.position.z = 0;
 				break;
 			case "z":
-			this.camera.up.set(0,0,1);
+				this.camera.up.set(0,0,1);
+				this.camera.position.x = 10.0;
 				this.camera.position.z = 10;
 				this.camera.position.y = 0;
 				break;

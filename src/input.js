@@ -3,7 +3,7 @@ import MeshIO from '../geometry-processing-js/node/utils/meshio';
 
 import smallDisk18 from './obj/small_disk_18.obj';
 import smallDisk20 from './obj/small_disk_20.obj';
-import smallDisk12 from './obj/small_disk_12.obj';
+import smallDisk12 from './obj/small_disk_12_2.obj';
 
 export function initMesh(shape) {
 	switch (shape) {
