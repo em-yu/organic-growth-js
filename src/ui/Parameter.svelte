@@ -42,10 +42,11 @@
 		z-index: 10;
 		top: var(--pos-top);
 		left: var(--pos-left);
-    background: rgba(10, 10, 10, 0.7);
+    background: rgba(10, 10, 10, 0.9);
     padding: 5px;
     border-radius: 6px;
 		width: 300px;
+		font-size: 0.9em;
 	}
 
 </style>

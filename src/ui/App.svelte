@@ -3,6 +3,8 @@
 	import MainControls from './MainControls.svelte';
 	import Controls from './Controls.svelte';
 	import Logger from './Logger.svelte';
+	import Tutorial from './Tutorial.svelte';
+	import IconButton from './IconButton.svelte';
 
 	import Renderer from '../renderer.js';
 	import { sceneGeometry, grow, init as simInit, handleGrowthZoneUpdate, handleSourcesUpdate } from '../simulation.js';
@@ -12,7 +14,7 @@
 	let nVertices = 0;
 	let parameters = {
 		smoothness: 0.75,
-		growthZone: 0.5,
+		growthZone: 0.45,
 		gravity: {
 			basis: ["x", "y", "z"],
 			phi: 0,
@@ -26,7 +28,7 @@
 		sources: 0,
 		orbitModel: false,
 	};
-	let sceneEditMode = false;
+	let showTutorial = true;
 
 	const MAX_POINTS = 100000; // Is defined twice (simulation.js)
 
@@ -88,11 +90,11 @@
 					case 'disk':
 					case 'square':
 						parameters.gravity.basis = ["x", "y", "z"]; // z is the axis of symmetry
-						renderer.updateCameraUp("z");
+						renderer.updateCameraUp("z"); // Update camera and orbit controls
 						break;
 					case 'cylinder':
 						parameters.gravity.basis = ["x", "z", "y"]; // y is the axis of symmetry
-						renderer.updateCameraUp("y");
+						renderer.updateCameraUp("y"); // Update camera and orbit controls
 						break;
 				}
 				init();
@@ -153,25 +155,49 @@
 
 </script>
 
+<style>
+	.tutorial-button {
+		position: fixed;
+		bottom: 0;
+		right: 0;
+		color: #DADADA;
+    padding: 10px;
+	}
+
+	.tutorial-button .material-icons {
+		font-size: 30px;
+	}
+</style>
+
+
+{#if showTutorial}
+	<Tutorial exit={() => showTutorial = false} />
+{/if}
 
 <Controls 
 	bind:parameters={parameters}
-	bind:sceneEditMode={sceneEditMode}
 	bind:growthSteps={steps}
 	on:change={updateParameters}
 	exportModel={exportModel}
 	resetHandler={init}
 />
 
-{#if !sceneEditMode}
-	<MainControls bind:playGrowth={playGrowth} stepHandler={growthStep} resetHandler={init}/>
 
-	<Logger>
-		{#if playGrowth}
-			Growing...<br/>
-		{:else}
-			Growth steps: {steps} <br/>
-		{/if}
-		Vertices: {nVertices}
-	</Logger>
-{/if}
+<MainControls bind:playGrowth={playGrowth} stepHandler={growthStep} resetHandler={init} bind:growthSteps={steps}/>
+
+<Logger>
+	{#if playGrowth}
+		Growing...<br/>
+	{:else}
+		Growth steps: {steps} <br/>
+	{/if}
+	Vertices: {nVertices}
+</Logger>
+
+<div class="tutorial-button">
+	<IconButton on:click={() => {showTutorial = true;}} >
+		<i class="material-icons">
+			help
+		</i>
+	</IconButton>
+</div>

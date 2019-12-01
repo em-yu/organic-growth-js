@@ -6,12 +6,14 @@
 	export let stepHandler;
 	export let resetHandler;
 	export let playGrowth = false;
+	export let growthSteps;
 
 	let showPopup = false;
 
 	function handleKeydown(e) {
 		if (e.keyCode === 32) {
 			playGrowth = !playGrowth;
+			e.preventDefault();
 		}
 	}
 
@@ -52,7 +54,7 @@
 
 <div class="bottom-container">
 	<div class="main-controls">
-		<IconButton on:click={() => { showPopup = true; }}>
+		<IconButton disabled={growthSteps === 0} on:click={() => { if(growthSteps > 0) showPopup = true; }}>
 			<i class="material-icons">replay</i>
 		</IconButton>
 

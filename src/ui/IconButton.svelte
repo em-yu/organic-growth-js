@@ -6,6 +6,9 @@
 	function click() {
 		dispatch('click');
 	}
+
+	export let disabled = false;
+
 </script>
 
 <style>
@@ -24,18 +27,23 @@
 		margin: 0;
 	}
 
-	button:hover {
+	button:not(.disabled):hover {
 		background: rgba(255, 255, 255, 0.1);
 		transition: background-color 0.5s;
 	}
 
-	button:active {
+	button:not(.disabled):active {
 		background: rgba(255, 255, 255, 0.2);
 		transition: background-color 0.2s;
 	}
 
+	.disabled {
+		cursor: default;
+		opacity: 0.3;
+	}
+
 </style>
 
-<button on:click={click}>
+<button class:disabled on:click={click}>
 	<slot></slot>
 </button>
