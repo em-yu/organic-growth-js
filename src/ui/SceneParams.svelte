@@ -41,22 +41,12 @@
 
 <style>
 
-	/* .labeled-slider {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-	}
-
-	.labeled-slider .label {
-		font-size: 0.9em;
-		padding: 5px;
-		padding-right: 20px;
-	} */
-
 </style>
 
 <ControlsGroup right>
-	<Parameter label="Input 3D model">
+	<Parameter
+		label="Starting shape"
+		hint="Choose the starting shape to be grown." hintLeftSide>
 		<ToggleSelect
 			options={inputOptions}
 			bind:value={selectedModel}
@@ -67,7 +57,8 @@
 	
 
 <ControlsGroup right>
-	<Parameter label="View">
+	<Parameter
+		label="View">
 		<ToggleSelect
 			options={["Wireframe", "Solid"]}
 			bind:value={parameters.material}
@@ -77,7 +68,10 @@
 </ControlsGroup>
 
 <ControlsGroup right>
-	<Parameter label="Export 3D model">
+	<Parameter
+		label="Export 3D model"
+		hint="Export the current 3D model to an OBJ file to download it. <br/>
+					OBJ files can be imported in most CAD and 3D modelling software." hintLeftSide>
 		<Button
 			on:click={exportModel}
 		>

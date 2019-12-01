@@ -49,7 +49,10 @@
 	
 	
 <ControlsGroup>
-	<Parameter label="Smoothness">
+	<Parameter
+		label="Smoothness"
+		hint="Control how much the surface resists wrinkling and how smooth the final result will be."
+		>
 		<Slider
 			bind:value={parameters.smoothness}
 			min = "0.5" max = "1.0" {step}
@@ -57,7 +60,11 @@
 		/>
 	</Parameter>
 
-	<Parameter label="Growth zone">
+	<Parameter
+		label="Growth zone"
+		hint="Control the size of the growth zone. <br/>
+					The <span style='background-color: #aa0c27'>growth zone</span> is where new cells are added."
+		>
 		<Slider
 			bind:value={parameters.growthZone}
 			min = "0.1" max = "0.8" {step}
@@ -65,7 +72,10 @@
 		/>
 	</Parameter>
 
-	<Parameter label="Growth sources">
+	<Parameter
+		label="Growth sources"
+		hint="Choose a number of growth sources on the edge of the mesh. <br/> <em>All</em> corresponds to all the edge being a growth source."
+		>
 		<ToggleSelect
 			options={sourcesOptions}
 			bind:value={parameters.sources}
@@ -77,7 +87,11 @@
 </ControlsGroup>
 
 <ControlsGroup>
-	<Parameter label="Gravity">
+	<Parameter
+		label="Gravity"
+		hint="Control the direction and strength of the
+					<span style='background-color: #ff0; color: black;'>gravity</span> applied to cells in the growth zone."
+		>
 		<div class="labeled-slider">
 			<div class="label">Norm</div>
 			<Slider
