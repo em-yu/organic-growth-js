@@ -5,6 +5,7 @@
 	import Checkbox from './Checkbox.svelte';
 	import ToggleSelect from './ToggleSelect.svelte';
 	import Button from './Button.svelte';
+	import Popup from './Popup.svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
@@ -19,9 +20,18 @@
 		change('gravity');
 	}
 
+	function updateInputModel() {
+		parameters.model = selectedModel;
+		change('model');
+	}
+
 	export let parameters = {};
+	export let growthSteps;
 
 	let step = 0.01;
+	let showPopup = false;
+	let selectedModel = parameters.model;
+
 	let axisOptions = ["x", "y", "z"];
 	let sourcesOptions = [
 		{label: "all", value: 0},
@@ -29,6 +39,11 @@
 		4,
 		5,
 		6
+	];
+	let inputOptions = [
+		"disk",
+		"cylinder",
+		"square"
 	];
 
 </script>
@@ -46,7 +61,18 @@
 		padding-right: 20px;
 	}
 </style>
-	
+
+<ControlsGroup>
+	<Parameter
+		label="Starting shape"
+		hint="Choose the starting shape. Different starting shapes will give very different results.">
+		<ToggleSelect
+			options={inputOptions}
+			bind:value={selectedModel}
+			on:change={() => { if (growthSteps > 0) { showPopup = true; } else { updateInputModel() } }}
+		/>
+	</Parameter>
+</ControlsGroup>
 	
 <ControlsGroup>
 	<Parameter
@@ -74,7 +100,8 @@
 
 	<Parameter
 		label="Growth sources"
-		hint="Choose a number of growth sources on the edge of the mesh. <br/> <em>All</em> corresponds to all the edge being a growth source."
+		hint="Choose a number of growth sources on the edge of the mesh. <br/>
+				<em>All</em> corresponds to all the edge being a growth source."
 		>
 		<ToggleSelect
 			options={sourcesOptions}
@@ -118,3 +145,12 @@
 		</div> -->
 	</Parameter>
 </ControlsGroup>
+
+{#if showPopup}
+	<Popup
+		confirmHandler={() => { updateInputModel(); showPopup = false;}}
+		cancelHandler={() => { showPopup = false; selectedModel = parameters.model }}>
+		<h3>Change starting shape?</h3>
+		<p>By changing starting shape, all current growth progress will be lost.</p>
+	</Popup>
+{/if}

@@ -36,13 +36,13 @@
 		<SimulationParams
 			bind:parameters={parameters}
 			on:change={change}
+			bind:growthSteps={growthSteps}
 		/>
 </SideControls>
 
 <SideControls right>
 		<SceneParams 
 			bind:parameters={parameters}
-			bind:growthSteps={growthSteps}
 			on:change={change}
 			exportModel={exportModel}
 		/>

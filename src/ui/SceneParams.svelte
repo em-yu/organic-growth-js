@@ -5,7 +5,6 @@
 	import Checkbox from './Checkbox.svelte';
 	import Button from './Button.svelte';
 	import ToggleSelect from './ToggleSelect.svelte';
-	import Popup from './Popup.svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
@@ -16,26 +15,11 @@
 		});
 	};
 
-	function updateInputModel() {
-		parameters.model = selectedModel;
-		change('model');
-	}
-
 	export let parameters = {};
-	export let growthSteps;
 	export let exportModel;
 
 	let step = 0.01;
 	let showPopup = false;
-	let selectedModel = parameters.model;
-
-	let inputOptions = [
-		"disk",
-		"cylinder",
-		"square"
-	];
-
-
 
 </script>
 
@@ -45,18 +29,6 @@
 	}
 
 </style>
-
-<ControlsGroup right>
-	<Parameter
-		label="Starting shape"
-		hint="Choose the starting shape to be grown." hintLeftSide>
-		<ToggleSelect
-			options={inputOptions}
-			bind:value={selectedModel}
-			on:change={() => { if (growthSteps > 0) { showPopup = true; } else { updateInputModel() } }}
-		/>
-	</Parameter>
-</ControlsGroup>
 	
 
 <ControlsGroup right>
@@ -94,12 +66,3 @@
 		</Button>
 	</Parameter>
 </ControlsGroup>
-
-{#if showPopup}
-	<Popup
-		confirmHandler={() => { updateInputModel(); showPopup = false;}}
-		cancelHandler={() => { showPopup = false; selectedModel = parameters.model }}>
-		<h3>Change input mesh?</h3>
-		<p>By changing input mesh, all current growth progress will be lost.</p>
-	</Popup>
-{/if}
