@@ -9,6 +9,12 @@
 
 	let showPopup = false;
 
+	function handleKeydown(e) {
+		if (e.keyCode === 32) {
+			playGrowth = !playGrowth;
+		}
+	}
+
 </script>
 
 <style>
@@ -41,6 +47,8 @@
 	}
 
 </style>
+
+<svelte:window on:keydown={handleKeydown}/>
 
 <div class="bottom-container">
 	<div class="main-controls">
