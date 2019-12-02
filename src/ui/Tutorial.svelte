@@ -53,8 +53,8 @@
 
 </style>
 
-<div class="overlay">
-	<div class="popup">
+<div class="overlay" on:click={exit}>
+	<div class="popup" on:click={(e) => {e.stopPropagation()}}>
 		<div class="description">
 			<h1>Differential growth simulator</h1>
 			<p>

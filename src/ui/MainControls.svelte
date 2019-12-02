@@ -15,6 +15,10 @@
 			playGrowth = !playGrowth;
 			e.preventDefault();
 		}
+		if (e.keyCode === 8) {
+			resetHandler();
+			e.preventDefault();
+		}
 	}
 
 </script>

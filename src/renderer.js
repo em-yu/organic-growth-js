@@ -103,7 +103,10 @@ export default class Renderer {
 				color = colors[i];
 			}
 			else {
-				color = DEFAULT;
+				if (v.onBoundary())
+					color = EDGE_COLOR;
+				else
+					color = DEFAULT;
 			}
 			this.bufferGeometry.attributes.color.setXYZ(i, color.x, color.y, color.z);
 		};
