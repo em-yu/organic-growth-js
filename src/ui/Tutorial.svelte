@@ -69,7 +69,7 @@
 				<li>
 					Start and stop the growth simulation by clicking <b><i class="material-icons">play_circle_outline</i></b>
 					or by pressing <b><code>SPACE</code></b> on your keyboard. The simulation can be restarted from the start by clicking
-					<b><i class="material-icons">replay</i></b>
+					<b><i class="material-icons">replay</i></b> or by pressing <b><code>BACKSPACE</code></b> on your keyboard.
 				</li>
 				<li>
 					<b>Click and drag</b> anywhere on the scene to move the camera around. Zoom in/out by using the <b>scrolling wheel</b>.

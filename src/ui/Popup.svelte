@@ -39,8 +39,8 @@
 
 </style>
 
-<div class="overlay">
-	<div class="confirm-popup">
+<div class="overlay" on:click={cancelHandler}>
+	<div class="confirm-popup" on:click={(e) => {e.stopPropagation()}}>
 		<div class="description">
 			<slot></slot>
 		</div>

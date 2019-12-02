@@ -183,7 +183,11 @@
 />
 
 
-<MainControls bind:playGrowth={playGrowth} stepHandler={growthStep} resetHandler={init} bind:growthSteps={steps}/>
+<MainControls
+	bind:playGrowth={playGrowth}
+	stepHandler={growthStep}
+	resetHandler={() => {playGrowth = false; init()}}
+	bind:growthSteps={steps}/>
 
 <Logger>
 	{#if playGrowth}
