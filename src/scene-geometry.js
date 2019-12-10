@@ -19,6 +19,7 @@ export default class SceneGeometry {
 			f: indices,
 			v: positions
 		});
+		console.log(mesh)
 
 		// Create geometry object (center on origin and normalize edges to be unit lengths)
 		const geometry = new Geometry(mesh, positions, MAX_POINTS, false, true);
@@ -31,6 +32,7 @@ export default class SceneGeometry {
 			n++;
 		}
 		edgeLength /= n;
+		console.log(edgeLength)
 
 		this.mesh = mesh;
 		this.geometry = geometry;
@@ -135,8 +137,41 @@ export default class SceneGeometry {
 	
 	smoothMesh(smoothness) {
 		let scale = smoothness || 0.1;
+		// for (let v of this.mesh.vertices) {
+		// 	const onBoundary = v.onBoundary();
+		// 	let vPos = this.geometry.positions[v.index];
+		// 	let barycenter = new Vector();
+		// 	let n = 0;
+		// 	for (let adjacent of v.adjacentVertices()) {
+		// 		if (onBoundary && !adjacent.onBoundary()) // for boundary vertices: only other boundary vertices count
+		// 			continue;
+		// 		const aPos = this.geometry.positions[adjacent.index];
+		// 		barycenter.incrementBy(aPos);
+		// 		n++;
+		// 	}
+		// 	if (n > 0) {
+		// 		barycenter.divideBy(n);
+		// 		let smoothing = barycenter.minus(vPos);
+		// 		if (onBoundary) {
+		// 			// Smooth less
+		// 			smoothing.scaleBy(0.1);
+		// 		}
+		// 		smoothing.scaleBy(scale * v.growthFactor);
+	
+		// 		// Move vertex to tangential barycenter of neighbors
+		// 		this.geometry.positions[v.index].incrementBy(smoothing);
+		// 	}
+		// }
+
+		// L2 smoothing
+		let laplacians = new Array(this.mesh.vertices.length);
+		let N = new Array(this.mesh.vertices.length);
 		for (let v of this.mesh.vertices) {
 			const onBoundary = v.onBoundary();
+			// if (onBoundary) {
+			// 	laplacians[v.index] = 0;
+			// 	continue;
+			// }
 			let vPos = this.geometry.positions[v.index];
 			let barycenter = new Vector();
 			let n = 0;
@@ -149,17 +184,37 @@ export default class SceneGeometry {
 			}
 			if (n > 0) {
 				barycenter.divideBy(n);
-				let smoothing = barycenter.minus(vPos);
-				if (onBoundary) {
-					// Smooth less
-					smoothing.scaleBy(0.1);
-				}
-				smoothing.scaleBy(scale * v.growthFactor);
-	
-				// Move vertex to tangential barycenter of neighbors
-				this.geometry.positions[v.index].incrementBy(smoothing);
+				let L = barycenter.minus(vPos);
+				laplacians[v.index] = L;
 			}
+			else {
+				laplacians[v.index] = vPos.negated();
+			}
+			N[v.index] = n;
 		}
+		for (let v of this.mesh.vertices) {
+			const onBoundary = v.onBoundary();
+			if (onBoundary) {
+				let smoothing = laplacians[v.index].times(0.2 * scale);
+				this.geometry.positions[v.index].incrementBy(smoothing);
+				continue;
+			}
+			let w = 0;
+			let L2 = new Vector();
+			for (let adjacent of v.adjacentVertices()) {
+				w += (1 + 1 / N[adjacent.index]);
+				L2.incrementBy(laplacians[adjacent.index].minus(laplacians[v.index]));
+			}
+			if (N[v.index] != 0) {
+				w /= N[v.index];
+				L2.scaleBy( 1/N[v.index])
+			}
+			let smoothing = L2.times(1/w).negated();
+			smoothing.incrementBy(laplacians[v.index]);
+			smoothing.scaleBy(scale);
+			this.geometry.positions[v.index].incrementBy(smoothing);
+		}
+
 	}
 
 	meanCurvSmooth(step) {
