@@ -107,7 +107,8 @@ export default class EdgeBasedGrowth {
 			let phiA = vertexGrowthFactors.get(vA.index, 0);
 			let phiB = vertexGrowthFactors.get(vB.index, 0);
 
-			let phi = Math.max(phiA, phiB);
+			// let phi = Math.max(phiA, phiB);
+			let phi = (phiA + phiB) / 2;
 			let newEdgeLength = edgeLength
 													* (1 + phi);
 			if (newEdgeLength > this.edgeThreshold) {
