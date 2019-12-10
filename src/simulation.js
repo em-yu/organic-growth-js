@@ -44,15 +44,10 @@ export function init(params) {
 		growthProcess = new EdgeBasedGrowth(sceneGeometry.geometry, sceneGeometry.edgeLength * GROWTH_TRESHOLD);
 	}
 	else {
-		// For higher number of sources, it is best to switch input mesh to more subdivided ones.
+		// Input mesh is switched depending on number of sources so that the number of edge vertices is a multiple of nb of sources.
 		// Result is more symmetrical due to better distributed sources
-		if (model === 'disk' && (sources === 5 || sources === 4)) {
-			let inputMesh = initMesh('disk20');
-			sceneGeometry = new SceneGeometry(MAX_POINTS);
-			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
-		}
-		if (model === 'disk' && (sources === 6)) {
-			let inputMesh = initMesh('disk18');
+		if (model === 'disk' && (sources === 6 || sources === 4 || sources === 3)) {
+			let inputMesh = initMesh('disk12');
 			sceneGeometry = new SceneGeometry(MAX_POINTS);
 			sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
 		}

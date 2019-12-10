@@ -8,9 +8,11 @@ import smallDisk12 from './obj/small_disk_12_2.obj';
 export function initMesh(shape) {
 	switch (shape) {
 		case "disk":
-			return MeshIO.readOBJ(smallDisk12);
-		case "disk18":
-			return MeshIO.readOBJ(smallDisk18);
+			// return MeshIO.readOBJ(smallDisk12);
+			return disk(10);
+		case "disk12":
+			// return MeshIO.readOBJ(smallDisk18);
+			return disk(12);
 		case "disk20":
 			return MeshIO.readOBJ(smallDisk20);
 		case "square":
@@ -183,4 +185,29 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 		"f": indices,
 		"v": vertices
 	}
+}
+
+function disk(n) {
+	let vertices = [];
+	let indices = [];
+
+	let innerRadius = 1.0;
+
+	let center = new Vector(0, 0, 0);
+	vertices.push(center);
+
+	let innerAngle = 2 * Math.PI / n;
+	
+	for (let i = 0; i < n; i++) {
+		vertices.push(new Vector(innerRadius * Math.cos(innerAngle * i), innerRadius * Math.sin(innerAngle * i), 0));
+		indices.push(0);
+		indices.push((n - 1 + i) % n + 1);
+		indices.push(i + 1);
+	}
+
+	return {
+		"f": indices,
+		"v": vertices
+	}
+
 }
