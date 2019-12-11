@@ -36,6 +36,8 @@
 	const renderer = new Renderer(MAX_POINTS);
 	renderer.init();
 
+	let stats = [];
+
 	// Initialize simulation
 	init();
 
@@ -44,7 +46,7 @@
 	animate();
 
 	function animate() {
-
+		let t0 = performance.now();
 		renderer.render(parameters.material === 'Wireframe');
 
 		if (playGrowth) {
@@ -55,7 +57,12 @@
 			renderer.removeGravityArrow();
 			growthStep();
 		}
-
+		let t1 = performance.now();
+		let delta = t1 - t0;
+		stats.push(
+			{"vertices": sceneGeometry.nVertices(),
+			"time": delta});
+			
 		// Next frame
 		requestAnimationFrame(animate);
 	}
@@ -149,6 +156,7 @@
 	// }
 
 	function exportModel() {
+		console.log(stats);
 		exportOBJ(sceneGeometry);
 	}
 
