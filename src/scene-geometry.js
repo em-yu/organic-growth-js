@@ -1,8 +1,8 @@
-import { Mesh } from '../geometry-processing-js/node/core/mesh';
-import { Geometry } from '../geometry-processing-js/node/core/geometry';
-import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import { colormap, coolwarm } from '../geometry-processing-js/node/utils/colormap';
-import MeanCurvatureFlow from '../geometry-processing-js/node/projects/geometric-flow/mean-curvature-flow';
+import { Mesh } from '../libs/geometry-processing-js/node/core/mesh';
+import { Geometry } from '../libs/geometry-processing-js/node/core/geometry';
+import Vector from '../libs/geometry-processing-js/node/linear-algebra/vector';
+import { colormap, coolwarm } from '../libs/geometry-processing-js/node/utils/colormap';
+import MeanCurvatureFlow from '../libs/geometry-processing-js/node/projects/geometric-flow/mean-curvature-flow';
 
 export default class SceneGeometry {
 	constructor() {

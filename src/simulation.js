@@ -1,5 +1,5 @@
-import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import MemoryManager from '../geometry-processing-js/node/linear-algebra/emscripten-memory-manager';
+import Vector from '../libs/geometry-processing-js/node/linear-algebra/vector';
+import MemoryManager from '../libs/geometry-processing-js/node/linear-algebra/emscripten-memory-manager';
 
 
 import { initMesh } from './input';
@@ -38,6 +38,8 @@ export function init(params) {
 	let inputMesh = initMesh(model);
 	sceneGeometry = new SceneGeometry(MAX_POINTS);
 	sceneGeometry.build(inputMesh["f"], inputMesh["v"], MAX_POINTS);
+
+	console.log(sceneGeometry);
 
 	// Initialise growth process
 	if (sources === 0) {

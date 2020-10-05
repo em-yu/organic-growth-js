@@ -1,5 +1,5 @@
-import HeatMethod from '../geometry-processing-js/node/projects/geodesic-distance/heat-method';
-import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
+import HeatMethod from '../libs/geometry-processing-js/node/projects/geodesic-distance/heat-method';
+import DenseMatrix from '../libs/geometry-processing-js/node/linear-algebra/dense-matrix';
 
 export default class EdgeBasedGrowth {
 	constructor(geometry, edgeThreshold, sources) {

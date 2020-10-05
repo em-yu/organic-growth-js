@@ -1,4 +1,4 @@
-import MeshIO from '../geometry-processing-js/node/utils/meshio';
+import MeshIO from '../libs/geometry-processing-js/node/utils/meshio';
 
 export function exportOBJ(sceneGeometry) {
 

@@ -1,4 +1,4 @@
-import Vector from '../geometry-processing-js/node/linear-algebra/vector';
+import Vector from '../libs/geometry-processing-js/node/linear-algebra/vector';
 
 const K = 100;
 

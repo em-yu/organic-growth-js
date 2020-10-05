@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import Vector from '../geometry-processing-js/node/linear-algebra/vector';
+import Vector from '../libs/geometry-processing-js/node/linear-algebra/vector';
 
 const DEFAULT = new Vector(1.0, 0.3, 0.3);
 const EDGE_COLOR = new Vector(1.0, 1.0, 1.0);

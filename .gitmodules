@@ -1,0 +1,3 @@
+[submodule "libs/geometry-processing-js"]
+	path = libs/geometry-processing-js
+	url = git@github.com:em-yu/geometry-processing-js.git

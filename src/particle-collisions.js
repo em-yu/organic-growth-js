@@ -1,6 +1,6 @@
-import Vector from '../geometry-processing-js/node/linear-algebra/vector';
-import DenseMatrix from '../geometry-processing-js/node/linear-algebra/dense-matrix';
-import sparse from '../geometry-processing-js/node/linear-algebra/sparse-matrix';
+import Vector from '../libs/geometry-processing-js/node/linear-algebra/vector';
+import DenseMatrix from '../libs/geometry-processing-js/node/linear-algebra/dense-matrix';
+import sparse from '../libs/geometry-processing-js/node/linear-algebra/sparse-matrix';
 const SparseMatrix = sparse[0];
 const Triplet = sparse[1];
 
