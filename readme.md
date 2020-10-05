@@ -5,7 +5,7 @@ Live demo >> http://differential-growth.surge.sh/
 Built with:
 
 * [svelte](https://svelte.dev/)
-* [geometry-processing-js](https://github.com/GeometryCollective/geometry-processing-js)
+* [geometry-processing-js](https://github.com/GeometryCollective/geometry-processing-js) (custom fork of the main project, included as a git submodule)
 * [THREE.js](https://threejs.org/)
 
 Inspired by:
@@ -17,7 +17,10 @@ This was built during a project course at DTU, so more technical details can be 
 
 To run locally with webpack dev server:
 
-```npm run dev```
+```
+npm install
+npm run dev
+```
 
 To build:
 
